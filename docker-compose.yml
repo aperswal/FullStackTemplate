@@ -1,0 +1,77 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/template
+      - DEPLOY_TARGET=docker
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - BETTER_AUTH_SECRET=development-secret-change-me-in-production
+      - BETTER_AUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - STRIPE_SECRET_KEY=sk_test_placeholder
+      - STRIPE_WEBHOOK_SECRET=whsec_placeholder
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000/api/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/template
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  python:
+    build:
+      context: ./services/python
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/python:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/template
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=template
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

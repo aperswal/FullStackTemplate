@@ -1,0 +1,6 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'infra/*'
+  - 'services/*'
+  - 'e2e'

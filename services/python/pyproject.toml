@@ -1,0 +1,41 @@
+[project]
+name = "template-python"
+version = "0.1.0"
+description = "Data analysis, AI/ML, and scripting service"
+requires-python = ">=3.12"
+dependencies = [
+  "httpx>=0.27",
+  "pydantic>=2.10",
+  "python-dotenv>=1.0",
+  "psycopg[binary]>=3.2",
+]
+
+[project.optional-dependencies]
+data = [
+  "pandas>=2.2",
+  "numpy>=2.1",
+  "polars>=1.20",
+]
+ai = [
+  "openai>=1.60",
+  "anthropic>=0.40",
+]
+jupyter = [
+  "jupyter>=1.0",
+  "ipykernel>=6.29",
+]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.8",
+  "mypy>=1.14",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

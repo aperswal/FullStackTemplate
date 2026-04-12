@@ -1,0 +1,26 @@
+{
+  "name": "fullstack-template",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "husky": "^9",
+    "lint-staged": "^15",
+    "prettier": "^3",
+    "turbo": "^2",
+    "typescript-eslint": "^8.58.1"
+  }
+}
