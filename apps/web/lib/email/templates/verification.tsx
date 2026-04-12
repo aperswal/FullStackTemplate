@@ -10,6 +10,10 @@ import {
   Text,
 } from '@react-email/components';
 
+import messages from '@/messages/en.json';
+
+const t = messages.email.verification;
+
 interface VerificationEmailProps {
   verificationUrl: string;
   userName: string;
@@ -19,22 +23,18 @@ export function VerificationEmail({ verificationUrl, userName }: VerificationEma
   return (
     <Html>
       <Head />
-      <Preview>Verify your email address</Preview>
+      <Preview>{t.preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Verify your email</Heading>
-          <Text style={text}>Hi {userName},</Text>
-          <Text style={text}>
-            Click the button below to verify your email address and activate your account.
-          </Text>
+          <Heading style={heading}>{t.heading}</Heading>
+          <Text style={text}>{t.greeting.replace('{userName}', userName)}</Text>
+          <Text style={text}>{t.body}</Text>
           <Section style={buttonSection}>
             <Button style={button} href={verificationUrl}>
-              Verify Email
+              {t.button}
             </Button>
           </Section>
-          <Text style={footer}>
-            If you didn&apos;t create an account, you can safely ignore this email.
-          </Text>
+          <Text style={footer}>{t.footer}</Text>
         </Container>
       </Body>
     </Html>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { createLogger } from '@/lib/logger';
@@ -14,6 +15,8 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     log.error({ err: error, digest: error.digest }, 'Unhandled error');
   }, [error]);
@@ -21,13 +24,15 @@ export default function ErrorPage({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex flex-col items-center gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Something went wrong</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t('somethingWentWrong')}</h2>
         <p className="text-muted-foreground max-w-md text-sm">
-          {error.message || 'An unexpected error occurred. Please try again.'}
+          {error.message || t('unexpectedError')}
         </p>
-        {error.digest && <p className="text-muted-foreground text-xs">Error ID: {error.digest}</p>}
+        {error.digest && (
+          <p className="text-muted-foreground text-xs">{t('errorId', { digest: error.digest })}</p>
+        )}
       </div>
-      <Button onClick={reset}>Try again</Button>
+      <Button onClick={reset}>{t('tryAgain')}</Button>
     </div>
   );
 }

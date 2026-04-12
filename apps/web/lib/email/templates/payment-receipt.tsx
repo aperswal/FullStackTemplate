@@ -1,5 +1,9 @@
 import { Body, Container, Head, Heading, Html, Preview, Text } from '@react-email/components';
 
+import messages from '@/messages/en.json';
+
+const t = messages.email.paymentReceipt;
+
 interface PaymentReceiptEmailProps {
   userName: string;
   planName: string;
@@ -16,18 +20,18 @@ export function PaymentReceiptEmail({
   return (
     <Html>
       <Head />
-      <Preview>Payment receipt for {planName}</Preview>
+      <Preview>{t.preview.replace('{planName}', planName)}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Payment Receipt</Heading>
-          <Text style={text}>Hi {userName},</Text>
-          <Text style={text}>Thank you for your payment. Here are the details:</Text>
+          <Heading style={heading}>{t.heading}</Heading>
+          <Text style={text}>{t.greeting.replace('{userName}', userName)}</Text>
+          <Text style={text}>{t.thankYou}</Text>
           <Container style={details}>
-            <Text style={detailRow}>Plan: {planName}</Text>
-            <Text style={detailRow}>Amount: {amount}</Text>
-            <Text style={detailRow}>Date: {date}</Text>
+            <Text style={detailRow}>{t.plan.replace('{planName}', planName)}</Text>
+            <Text style={detailRow}>{t.amount.replace('{amount}', amount)}</Text>
+            <Text style={detailRow}>{t.date.replace('{date}', date)}</Text>
           </Container>
-          <Text style={footer}>If you have any questions, reply to this email.</Text>
+          <Text style={footer}>{t.footer}</Text>
         </Container>
       </Body>
     </Html>

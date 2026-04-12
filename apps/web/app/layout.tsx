@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 
 import { Providers } from '@/components/providers';
 import { CookieConsentBanner } from '@/components/cookie-consent';
+import messages from '@/messages/en.json';
 
 import './globals.css';
 
@@ -21,33 +24,30 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'FullStack Template',
-    template: '%s | FullStack Template',
+    default: messages.seo.siteName,
+    template: `%s | ${messages.seo.siteName}`,
   },
-  description:
-    'A production-ready full-stack template with authentication, payments, email, and more.',
+  description: messages.seo.defaultDescription,
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: BASE_URL,
-    siteName: 'FullStack Template',
-    title: 'FullStack Template',
-    description:
-      'A production-ready full-stack template with authentication, payments, email, and more.',
+    siteName: messages.seo.siteName,
+    title: messages.seo.siteName,
+    description: messages.seo.defaultDescription,
     images: [
       {
         url: `${BASE_URL}/api/og`,
         width: 1200,
         height: 630,
-        alt: 'FullStack Template',
+        alt: messages.seo.siteName,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FullStack Template',
-    description:
-      'A production-ready full-stack template with authentication, payments, email, and more.',
+    title: messages.seo.siteName,
+    description: messages.seo.defaultDescription,
   },
   robots: {
     index: true,
@@ -58,21 +58,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const intlMessages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers
-          posthogKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-          posthogHost={process.env.NEXT_PUBLIC_POSTHOG_HOST}
-        >
-          {children}
-        </Providers>
-        <CookieConsentBanner />
+        <NextIntlClientProvider messages={intlMessages}>
+          <Providers
+            posthogKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+            posthogHost={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+          >
+            {children}
+          </Providers>
+          <CookieConsentBanner />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

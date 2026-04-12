@@ -10,6 +10,9 @@ export default defineConfig({
     setupFiles: ['./lib/test-utils.ts'],
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules', '.next', 'e2e'],
+    env: {
+      SKIP_ENV_VALIDATION: 'true',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],

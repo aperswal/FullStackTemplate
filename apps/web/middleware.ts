@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { AUTH_SESSION_COOKIE } from '@/lib/auth/constants';
+import { ROUTES } from '@/lib/routes';
 
-const protectedPaths = ['/dashboard', '/settings'];
-const authPaths = ['/login', '/signup'];
+const protectedPaths = [ROUTES.dashboard, ROUTES.settings];
+const authPaths = [ROUTES.login, ROUTES.signup];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,7 +13,7 @@ export function middleware(request: NextRequest) {
   // Redirect unauthenticated users away from protected routes
   if (protectedPaths.some((path) => pathname.startsWith(path))) {
     if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL(ROUTES.login, request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -21,7 +22,7 @@ export function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (authPaths.some((path) => pathname.startsWith(path))) {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL(ROUTES.dashboard, request.url));
     }
   }
 

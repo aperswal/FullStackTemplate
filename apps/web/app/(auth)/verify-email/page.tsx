@@ -3,10 +3,12 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { authClient } from '@/lib/auth/client';
+import { ROUTES } from '@/lib/routes';
 
 export default function VerifyEmailPage() {
   return (
@@ -17,6 +19,7 @@ export default function VerifyEmailPage() {
 }
 
 function VerifyEmailContent() {
+  const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -42,26 +45,26 @@ function VerifyEmailContent() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Email Verification</CardTitle>
+        <CardTitle className="text-2xl">{t('emailVerification')}</CardTitle>
         <CardDescription>
-          {status === 'loading' && 'Verifying your email...'}
-          {status === 'success' && 'Your email has been verified!'}
-          {status === 'error' && 'Verification failed'}
+          {status === 'loading' && t('verifyingEmail')}
+          {status === 'success' && t('emailVerified')}
+          {status === 'error' && t('verificationFailed')}
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
         {status === 'success' && (
-          <Link href="/dashboard" className={buttonVariants()}>
-            Go to Dashboard
+          <Link href={ROUTES.dashboard} className={buttonVariants()}>
+            {t('goToDashboard')}
           </Link>
         )}
         {status === 'error' && (
           <p className="text-sm text-muted-foreground">
-            The verification link may have expired.{' '}
-            <Link href="/login" className="text-primary hover:underline">
-              Sign in
+            {t('verificationExpired')}{' '}
+            <Link href={ROUTES.login} className="text-primary hover:underline">
+              {t('signInToRequestNew')}
             </Link>{' '}
-            to request a new one.
+            {t('toRequestNewLink')}
           </p>
         )}
       </CardContent>

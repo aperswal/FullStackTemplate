@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateProfile } from './actions';
+import { trackEvent } from '@/lib/analytics';
 import type { UpdateProfileInput } from './profile.schema';
 
 interface ProfileFormProps {
@@ -16,6 +18,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ defaultValues }: ProfileFormProps) {
+  const t = useTranslations('profile');
   const [name, setName] = useState(defaultValues.name);
   const [image, setImage] = useState(defaultValues.image ?? '');
   const [loading, setLoading] = useState(false);
@@ -29,9 +32,10 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
     try {
       const input: UpdateProfileInput = { name, image: image || undefined };
       await updateProfile(input);
-      setMessage('Profile updated successfully.');
+      setMessage(t('profileUpdated'));
+      trackEvent('profile_updated');
     } catch {
-      setMessage('Failed to update profile. Please try again.');
+      setMessage(t('profileUpdateFailed'));
     } finally {
       setLoading(false);
     }
@@ -40,7 +44,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">{t('nameLabel')}</Label>
         <Input
           id="name"
           value={name}
@@ -51,20 +55,20 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="image">Profile image URL</Label>
+        <Label htmlFor="image">{t('profileImageUrl')}</Label>
         <Input
           id="image"
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          placeholder="https://example.com/avatar.jpg"
+          placeholder={t('profileImagePlaceholder')}
         />
       </div>
 
       {message && <p className="text-sm text-muted-foreground">{message}</p>}
 
       <Button type="submit" disabled={loading}>
-        {loading ? 'Saving...' : 'Save changes'}
+        {loading ? t('saving') : t('saveChanges')}
       </Button>
     </form>
   );

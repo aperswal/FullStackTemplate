@@ -3,12 +3,14 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth/client';
+import { ROUTES } from '@/lib/routes';
 
 export default function ResetPasswordPage() {
   return (
@@ -30,6 +32,8 @@ function ResetPasswordContent() {
 }
 
 function RequestReset() {
+  const t = useTranslations('auth');
+  const tc = useTranslations('common');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,10 +44,13 @@ function RequestReset() {
     setError('');
     setLoading(true);
 
-    const result = await authClient.requestPasswordReset({ email, redirectTo: '/reset-password' });
+    const result = await authClient.requestPasswordReset({
+      email,
+      redirectTo: ROUTES.resetPassword,
+    });
 
     if (result.error) {
-      setError(result.error.message ?? 'Failed to send reset email');
+      setError(result.error.message ?? t('failedToSendReset'));
       setLoading(false);
       return;
     }
@@ -56,12 +63,12 @@ function RequestReset() {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Check your email</CardTitle>
-          <CardDescription>We sent a password reset link to {email}</CardDescription>
+          <CardTitle className="text-2xl">{t('checkYourEmail')}</CardTitle>
+          <CardDescription>{t('resetLinkSent', { email })}</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <Link href="/login" className="text-sm text-primary hover:underline">
-            Back to sign in
+          <Link href={ROUTES.login} className="text-sm text-primary hover:underline">
+            {tc('backToSignIn')}
           </Link>
         </CardContent>
       </Card>
@@ -71,8 +78,8 @@ function RequestReset() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Reset password</CardTitle>
-        <CardDescription>Enter your email to receive a reset link</CardDescription>
+        <CardTitle className="text-2xl">{t('resetPassword')}</CardTitle>
+        <CardDescription>{t('resetPasswordDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,11 +88,11 @@ function RequestReset() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -94,13 +101,13 @@ function RequestReset() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Sending...' : 'Send reset link'}
+            {loading ? t('sending') : t('sendResetLink')}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          <Link href="/login" className="text-primary hover:underline">
-            Back to sign in
+          <Link href={ROUTES.login} className="text-primary hover:underline">
+            {tc('backToSignIn')}
           </Link>
         </p>
       </CardContent>
@@ -109,6 +116,7 @@ function RequestReset() {
 }
 
 function SetNewPassword({ token }: { token: string }) {
+  const t = useTranslations('auth');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState(false);
@@ -120,12 +128,12 @@ function SetNewPassword({ token }: { token: string }) {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('passwordMinLength'));
       return;
     }
 
@@ -134,7 +142,7 @@ function SetNewPassword({ token }: { token: string }) {
     const result = await authClient.resetPassword({ newPassword: password, token });
 
     if (result.error) {
-      setError(result.error.message ?? 'Failed to reset password');
+      setError(result.error.message ?? t('failedToReset'));
       setLoading(false);
       return;
     }
@@ -147,12 +155,12 @@ function SetNewPassword({ token }: { token: string }) {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Password updated</CardTitle>
-          <CardDescription>Your password has been successfully reset</CardDescription>
+          <CardTitle className="text-2xl">{t('passwordUpdated')}</CardTitle>
+          <CardDescription>{t('passwordResetSuccess')}</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <Link href="/login" className={buttonVariants()}>
-            Sign in
+          <Link href={ROUTES.login} className={buttonVariants()}>
+            {t('signIn')}
           </Link>
         </CardContent>
       </Card>
@@ -162,8 +170,8 @@ function SetNewPassword({ token }: { token: string }) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Set new password</CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
+        <CardTitle className="text-2xl">{t('setNewPassword')}</CardTitle>
+        <CardDescription>{t('setNewPasswordDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,11 +180,11 @@ function SetNewPassword({ token }: { token: string }) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="password">New Password</Label>
+            <Label htmlFor="password">{t('newPassword')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="At least 8 characters"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -186,7 +194,7 @@ function SetNewPassword({ token }: { token: string }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -198,7 +206,7 @@ function SetNewPassword({ token }: { token: string }) {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Updating...' : 'Update password'}
+            {loading ? t('updating') : t('updatePassword')}
           </Button>
         </form>
       </CardContent>

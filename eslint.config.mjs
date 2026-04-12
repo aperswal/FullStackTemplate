@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import i18nextPlugin from 'eslint-plugin-i18next';
 
 export default tseslint.config(
   js.configs.recommended,
@@ -49,10 +50,7 @@ export default tseslint.config(
   },
   // Provider implementation files are allowed to import their respective libraries
   {
-    files: [
-      'apps/web/lib/payments/providers/**',
-      'apps/web/lib/payments/stripe.ts',
-    ],
+    files: ['apps/web/lib/payments/providers/**', 'apps/web/lib/payments/stripe.ts'],
     rules: {
       'no-restricted-imports': 'off',
     },
@@ -67,6 +65,66 @@ export default tseslint.config(
     files: ['apps/web/lib/analytics/posthog.ts'],
     rules: {
       'no-restricted-imports': 'off',
+    },
+  },
+  // i18n enforcement: all user-facing strings in UI files must go through i18n
+  {
+    files: ['apps/web/app/**/*.tsx', 'apps/web/components/**/*.tsx', 'apps/web/features/**/*.tsx'],
+    plugins: { i18next: i18nextPlugin },
+    rules: {
+      'i18next/no-literal-string': [
+        'error',
+        {
+          mode: 'jsx-text-only',
+          ignoreAttribute: [
+            'className',
+            'class',
+            'style',
+            'href',
+            'src',
+            'alt',
+            'type',
+            'id',
+            'name',
+            'data-testid',
+            'autoComplete',
+            'htmlFor',
+            'role',
+            'key',
+            'variant',
+            'size',
+            'strokeLinecap',
+            'strokeLinejoin',
+            'viewBox',
+            'fill',
+            'stroke',
+            'd',
+            'lang',
+            'dir',
+          ],
+          ignoreCallee: [
+            'cn',
+            'clsx',
+            'buttonVariants',
+            'console.log',
+            'console.error',
+            'console.warn',
+          ],
+          ignoreProperty: ['className', 'style'],
+        },
+      ],
+    },
+  },
+  // Exempt files that cannot or should not use i18n
+  {
+    files: [
+      'apps/web/app/global-error.tsx',
+      'apps/web/app/api/**',
+      'apps/web/lib/**',
+      'packages/**',
+    ],
+    rules: {
+      'i18next/no-literal-string': 'off',
     },
   },
 );

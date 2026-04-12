@@ -6,7 +6,6 @@ export default defineConfig({
   out: './lib/db/migrations',
   dbCredentials: {
     // drizzle-kit runs outside Next.js, so the validated env module is not available
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL ?? '',
   },
 });

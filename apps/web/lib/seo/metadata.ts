@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import messages from '@/messages/en.json';
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
 
 interface PageMetadataInput {
@@ -30,7 +32,7 @@ export function createMetadata({
       title,
       description,
       url,
-      siteName: 'FullStack Template',
+      siteName: messages.seo.siteName,
       locale: 'en_US',
       type: 'website',
       images: [

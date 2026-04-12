@@ -10,6 +10,10 @@ import {
   Text,
 } from '@react-email/components';
 
+import messages from '@/messages/en.json';
+
+const t = messages.email.passwordReset;
+
 interface PasswordResetEmailProps {
   resetUrl: string;
   userName: string;
@@ -19,23 +23,18 @@ export function PasswordResetEmail({ resetUrl, userName }: PasswordResetEmailPro
   return (
     <Html>
       <Head />
-      <Preview>Reset your password</Preview>
+      <Preview>{t.preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Reset your password</Heading>
-          <Text style={text}>Hi {userName},</Text>
-          <Text style={text}>
-            We received a request to reset your password. Click the button below to set a new one.
-          </Text>
+          <Heading style={heading}>{t.heading}</Heading>
+          <Text style={text}>{t.greeting.replace('{userName}', userName)}</Text>
+          <Text style={text}>{t.body}</Text>
           <Section style={buttonSection}>
             <Button style={button} href={resetUrl}>
-              Reset Password
+              {t.button}
             </Button>
           </Section>
-          <Text style={footer}>
-            If you didn&apos;t request this, you can safely ignore this email. This link expires in
-            1 hour.
-          </Text>
+          <Text style={footer}>{t.footer}</Text>
         </Container>
       </Body>
     </Html>

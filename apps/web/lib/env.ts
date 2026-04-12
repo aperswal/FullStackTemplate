@@ -50,6 +50,9 @@ export const env = createEnv({
 
     // Google Search Console
     GOOGLE_SITE_VERIFICATION: z.string().optional(),
+
+    // MCP (optional — secures the /api/mcp endpoint in production)
+    MCP_API_KEY: z.string().min(32).optional(),
   },
 
   // ─── Client-side variables (NEXT_PUBLIC_*) ───────────────────
@@ -88,6 +91,7 @@ export const env = createEnv({
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
+    MCP_API_KEY: process.env.MCP_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

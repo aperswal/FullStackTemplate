@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { signIn } from '@/lib/auth/client';
+import { trackEvent } from '@/lib/analytics';
+import { ROUTES } from '@/lib/routes';
 
 export default function LoginPage() {
   return (
@@ -20,12 +23,13 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
+  const t = useTranslations('auth');
+  const tc = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawCallback = searchParams.get('callbackUrl') ?? '/dashboard';
-  // Prevent open redirect — only allow relative paths
+  const rawCallback = searchParams.get('callbackUrl') ?? ROUTES.dashboard;
   const callbackUrl =
-    rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/dashboard';
+    rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : ROUTES.dashboard;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,23 +43,25 @@ function LoginContent() {
     const result = await signIn.email({ email, password });
 
     if (result.error) {
-      setError(result.error.message ?? 'Sign in failed');
+      setError(result.error.message ?? t('signInFailed'));
       setLoading(false);
       return;
     }
 
+    trackEvent('login_success', { method: 'email' });
     router.push(callbackUrl);
   }
 
   async function handleOAuth(provider: 'google' | 'github') {
+    trackEvent('auth_oauth_initiated', { provider });
     await signIn.social({ provider, callbackURL: callbackUrl });
   }
 
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
+        <CardTitle className="text-2xl">{t('welcomeBack')}</CardTitle>
+        <CardDescription>{t('signInToAccount')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,11 +70,11 @@ function LoginContent() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -78,12 +84,12 @@ function LoginContent() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Link
-                href="/reset-password"
+                href={ROUTES.resetPassword}
                 className="text-sm text-muted-foreground hover:text-primary"
               >
-                Forgot password?
+                {t('forgotPassword')}
               </Link>
             </div>
             <Input
@@ -97,29 +103,29 @@ function LoginContent() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? t('signingIn') : t('signIn')}
           </Button>
         </form>
 
         <div className="my-6 flex items-center gap-4">
           <Separator className="flex-1" />
-          <span className="text-sm text-muted-foreground">or</span>
+          <span className="text-sm text-muted-foreground">{tc('or')}</span>
           <Separator className="flex-1" />
         </div>
 
         <div className="space-y-2">
           <Button variant="outline" className="w-full" onClick={() => handleOAuth('google')}>
-            Continue with Google
+            {t('continueWithGoogle')}
           </Button>
           <Button variant="outline" className="w-full" onClick={() => handleOAuth('github')}>
-            Continue with GitHub
+            {t('continueWithGitHub')}
           </Button>
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-primary hover:underline">
-            Sign up
+          {t('noAccount')}{' '}
+          <Link href={ROUTES.signup} className="text-primary hover:underline">
+            {t('signUp')}
           </Link>
         </p>
       </CardContent>

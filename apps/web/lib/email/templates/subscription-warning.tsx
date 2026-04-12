@@ -10,6 +10,10 @@ import {
   Text,
 } from '@react-email/components';
 
+import messages from '@/messages/en.json';
+
+const t = messages.email.subscriptionWarning;
+
 interface SubscriptionWarningEmailProps {
   userName: string;
   planName: string;
@@ -24,24 +28,18 @@ export function SubscriptionWarningEmail({
   return (
     <Html>
       <Head />
-      <Preview>Action needed: payment failed for {planName}</Preview>
+      <Preview>{t.preview.replace('{planName}', planName)}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Payment Failed</Heading>
-          <Text style={text}>Hi {userName},</Text>
-          <Text style={text}>
-            We were unable to process your payment for the {planName} plan. Please update your
-            payment method to keep your subscription active.
-          </Text>
+          <Heading style={heading}>{t.heading}</Heading>
+          <Text style={text}>{t.greeting.replace('{userName}', userName)}</Text>
+          <Text style={text}>{t.body.replace('{planName}', planName)}</Text>
           <Section style={buttonSection}>
             <Button style={button} href={billingUrl}>
-              Update Payment Method
+              {t.button}
             </Button>
           </Section>
-          <Text style={footer}>
-            If your payment isn&apos;t updated within 7 days, your account will be downgraded to the
-            free plan.
-          </Text>
+          <Text style={footer}>{t.footer}</Text>
         </Container>
       </Body>
     </Html>

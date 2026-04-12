@@ -11,3 +11,5 @@ const client = postgres(env.DATABASE_URL, {
 });
 
 export const db = drizzle(client, { schema });
+
+export type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];

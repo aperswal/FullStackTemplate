@@ -1,0 +1,230 @@
+{
+  "common": {
+    "appName": "FullStack Template",
+    "tryAgain": "Try again",
+    "or": "or",
+    "backToHome": "Back to home",
+    "backToSignIn": "Back to sign in"
+  },
+  "seo": {
+    "siteName": "FullStack Template",
+    "defaultDescription": "A production-ready full-stack template with authentication, payments, email, and more."
+  },
+  "manifest": {
+    "name": "FullStack Template",
+    "shortName": "Template",
+    "description": "A production-ready full-stack template built with Next.js"
+  },
+  "nav": {
+    "pricing": "Pricing",
+    "login": "Log in",
+    "getStarted": "Get started",
+    "dashboard": "Dashboard",
+    "brandName": "Template"
+  },
+  "footer": {
+    "copyright": "\u00a9 {year} Template. All rights reserved.",
+    "pricing": "Pricing"
+  },
+  "marketing": {
+    "heroTitle": "Ship faster with a production-ready template",
+    "heroDescription": "Authentication, payments, email, database, analytics, and SEO pre-wired so you can focus on what makes your product unique.",
+    "getStarted": "Get started",
+    "viewPricing": "View pricing",
+    "featuresTitle": "Everything you need to launch",
+    "featuresSubtitle": "Stop rebuilding the same infrastructure. Start building your product.",
+    "ctaTitle": "Ready to start building?",
+    "ctaDescription": "Create your account and launch your first project in minutes.",
+    "ctaButton": "Get started for free",
+    "features": {
+      "auth": {
+        "title": "Authentication",
+        "description": "Email/password, OAuth, email verification, and role-based access out of the box."
+      },
+      "payments": {
+        "title": "Payments",
+        "description": "Stripe integration with subscription management and webhook handling."
+      },
+      "email": {
+        "title": "Email",
+        "description": "Transactional email with Resend and React Email templates, with SMTP fallback."
+      },
+      "database": {
+        "title": "Database",
+        "description": "PostgreSQL with Drizzle ORM, type-safe queries, and migration tooling."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "description": "Privacy-respecting analytics with PostHog and cookie consent built in."
+      },
+      "seo": {
+        "title": "SEO",
+        "description": "Sitemap, robots.txt, Open Graph images, JSON-LD structured data, and metadata factory."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "description": "Simple, transparent pricing for everyone.",
+    "subtitle": "Simple, transparent pricing. No hidden fees.",
+    "popular": "Popular",
+    "perMonth": "/month",
+    "getStartedFree": "Get started free",
+    "subscribeTo": "Subscribe to {planName}",
+    "redirecting": "Redirecting..."
+  },
+  "plans": {
+    "free": {
+      "name": "Free",
+      "description": "For individuals getting started",
+      "features": ["Basic features", "Community support", "1 project"]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "For professionals and teams",
+      "features": ["All free features", "Priority support", "Unlimited projects"]
+    }
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "signInToAccount": "Sign in to your account",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "signInFailed": "Sign in failed",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGitHub": "Continue with GitHub",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "createAccount": "Create an account",
+    "getStartedFree": "Get started with your free account",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "passwordPlaceholder": "At least 8 characters",
+    "creatingAccount": "Creating account...",
+    "createAccountButton": "Create account",
+    "signUpFailed": "Sign up failed",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "alreadyHaveAccount": "Already have an account?",
+    "emailVerification": "Email Verification",
+    "verifyingEmail": "Verifying your email...",
+    "emailVerified": "Your email has been verified!",
+    "verificationFailed": "Verification failed",
+    "goToDashboard": "Go to Dashboard",
+    "verificationExpired": "The verification link may have expired.",
+    "signInToRequestNew": "Sign in",
+    "toRequestNewLink": "to request a new one.",
+    "resetPassword": "Reset password",
+    "resetPasswordDescription": "Enter your email to receive a reset link",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending...",
+    "failedToSendReset": "Failed to send reset email",
+    "checkYourEmail": "Check your email",
+    "resetLinkSent": "We sent a password reset link to {email}",
+    "setNewPassword": "Set new password",
+    "setNewPasswordDescription": "Enter your new password below",
+    "newPassword": "New Password",
+    "updatePassword": "Update password",
+    "updating": "Updating...",
+    "failedToReset": "Failed to reset password",
+    "passwordUpdated": "Password updated",
+    "passwordResetSuccess": "Your password has been successfully reset"
+  },
+  "dashboard": {
+    "welcomeBack": "Welcome back, {name}",
+    "overview": "Here's an overview of your account.",
+    "role": "Role",
+    "upgradeToProForFullAccess": "Upgrade to Pro for full access",
+    "youHaveFullAccess": "You have full access",
+    "administratorAccess": "Administrator access",
+    "emailLabel": "Email",
+    "verified": "Verified",
+    "notVerified": "Not verified",
+    "memberSince": "Member since",
+    "accountCreated": "Account created"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "yourAccountInfo": "Your account information",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "roleLabel": "Role",
+    "billing": "Billing",
+    "billingDescription": "Manage your subscription and payment methods",
+    "manageSubscription": "Manage subscription",
+    "noSubscription": "No active subscription.",
+    "viewPlans": "View plans"
+  },
+  "profile": {
+    "nameLabel": "Name",
+    "profileImageUrl": "Profile image URL",
+    "profileImagePlaceholder": "https://example.com/avatar.jpg",
+    "profileUpdated": "Profile updated successfully.",
+    "profileUpdateFailed": "Failed to update profile. Please try again.",
+    "saveChanges": "Save changes",
+    "saving": "Saving..."
+  },
+  "cookie": {
+    "ariaLabel": "Cookie consent",
+    "message": "We use cookies to improve your experience and analyze site usage. By accepting, you consent to analytics cookies.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "criticalError": "A critical error occurred. Please try refreshing the page.",
+    "errorId": "Error ID: {digest}",
+    "pageNotFound": "Page not found",
+    "pageNotFoundDescription": "The page you are looking for does not exist or has been moved.",
+    "notFoundCode": "404"
+  },
+  "email": {
+    "verification": {
+      "preview": "Verify your email address",
+      "heading": "Verify your email",
+      "greeting": "Hi {userName},",
+      "body": "Click the button below to verify your email address and activate your account.",
+      "button": "Verify Email",
+      "footer": "If you didn't create an account, you can safely ignore this email."
+    },
+    "passwordReset": {
+      "preview": "Reset your password",
+      "heading": "Reset your password",
+      "greeting": "Hi {userName},",
+      "body": "We received a request to reset your password. Click the button below to set a new one.",
+      "button": "Reset Password",
+      "footer": "If you didn't request this, you can safely ignore this email. This link expires in 1 hour."
+    },
+    "paymentReceipt": {
+      "preview": "Payment receipt for {planName}",
+      "heading": "Payment Receipt",
+      "greeting": "Hi {userName},",
+      "thankYou": "Thank you for your payment. Here are the details:",
+      "plan": "Plan: {planName}",
+      "amount": "Amount: {amount}",
+      "date": "Date: {date}",
+      "footer": "If you have any questions, reply to this email."
+    },
+    "subscriptionWarning": {
+      "preview": "Action needed: payment failed for {planName}",
+      "heading": "Payment Failed",
+      "greeting": "Hi {userName},",
+      "body": "We were unable to process your payment for the {planName} plan. Please update your payment method to keep your subscription active.",
+      "button": "Update Payment Method",
+      "footer": "If your payment isn't updated within 7 days, your account will be downgraded to the free plan."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name is required",
+    "nameMaxLength": "Name must be under 100 characters",
+    "invalidUrl": "Must be a valid URL"
+  }
+}

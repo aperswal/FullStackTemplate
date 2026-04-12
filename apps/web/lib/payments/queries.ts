@@ -1,36 +1,32 @@
 import { eq } from 'drizzle-orm';
 import type { UserRole, SubscriptionStatus } from '@template/shared';
 
-import { db } from '@/lib/db';
+import { db, type DbOrTx } from '@/lib/db';
 import { subscription } from '@/lib/db/schema/subscriptions';
 import { user } from '@/lib/db/schema/auth';
 
-export async function getSubscriptionByUserId(userId: string) {
-  const result = await db.query.subscription.findFirst({
+export async function getSubscriptionByUserId(userId: string, dbOrTx: DbOrTx = db) {
+  const result = await dbOrTx.query.subscription.findFirst({
     where: eq(subscription.userId, userId),
   });
   return result ?? null;
 }
 
-export async function getSubscriptionByExternalId(externalSubscriptionId: string) {
-  const result = await db.query.subscription.findFirst({
-    where: eq(subscription.externalSubscriptionId, externalSubscriptionId),
-  });
-  return result ?? null;
-}
-
-export async function upsertSubscription(data: {
-  id: string;
-  userId: string;
-  provider: string;
-  externalSubscriptionId: string;
-  externalPriceId: string;
-  status: SubscriptionStatus;
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  cancelAtPeriodEnd: boolean;
-}) {
-  await db
+export async function upsertSubscription(
+  data: {
+    id: string;
+    userId: string;
+    provider: string;
+    externalSubscriptionId: string;
+    externalPriceId: string;
+    status: SubscriptionStatus;
+    currentPeriodStart: Date;
+    currentPeriodEnd: Date;
+    cancelAtPeriodEnd: boolean;
+  },
+  dbOrTx: DbOrTx = db,
+) {
+  await dbOrTx
     .insert(subscription)
     .values(data)
     .onConflictDoUpdate({
@@ -46,8 +42,8 @@ export async function upsertSubscription(data: {
     });
 }
 
-export async function updateUserRole(userId: string, role: UserRole) {
-  await db.update(user).set({ role, updatedAt: new Date() }).where(eq(user.id, userId));
+export async function updateUserRole(userId: string, role: UserRole, dbOrTx: DbOrTx = db) {
+  await dbOrTx.update(user).set({ role, updatedAt: new Date() }).where(eq(user.id, userId));
 }
 
 export async function updateUserPaymentCustomerId(

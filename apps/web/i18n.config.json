@@ -1,0 +1,7 @@
+{
+  "sourceLocale": "en",
+  "targetLocales": [],
+  "provider": "google-official",
+  "messagesDir": "./messages",
+  "maxLinesPerRequest": 50
+}

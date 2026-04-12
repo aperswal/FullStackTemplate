@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { signIn, signUp } from '@/lib/auth/client';
+import { trackEvent } from '@/lib/analytics';
+import { ROUTES } from '@/lib/routes';
 
 export default function SignupPage() {
+  const t = useTranslations('auth');
+  const tc = useTranslations('common');
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,12 +30,12 @@ export default function SignupPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('passwordMinLength'));
       return;
     }
 
@@ -39,23 +44,25 @@ export default function SignupPage() {
     const result = await signUp.email({ email, password, name });
 
     if (result.error) {
-      setError(result.error.message ?? 'Sign up failed');
+      setError(result.error.message ?? t('signUpFailed'));
       setLoading(false);
       return;
     }
 
-    router.push('/dashboard');
+    trackEvent('signup_success', { method: 'email' });
+    router.push(ROUTES.dashboard);
   }
 
   async function handleOAuth(provider: 'google' | 'github') {
-    await signIn.social({ provider, callbackURL: '/dashboard' });
+    trackEvent('auth_oauth_initiated', { provider });
+    await signIn.social({ provider, callbackURL: ROUTES.dashboard });
   }
 
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>Get started with your free account</CardDescription>
+        <CardTitle className="text-2xl">{t('createAccount')}</CardTitle>
+        <CardDescription>{t('getStartedFree')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,11 +71,11 @@ export default function SignupPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('name')}</Label>
             <Input
               id="name"
               type="text"
-              placeholder="Your name"
+              placeholder={t('namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -77,11 +84,11 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -90,11 +97,11 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('password')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="At least 8 characters"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -104,11 +111,11 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="Confirm your password"
+              placeholder={t('confirmPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -117,29 +124,29 @@ export default function SignupPage() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? t('creatingAccount') : t('createAccountButton')}
           </Button>
         </form>
 
         <div className="my-6 flex items-center gap-4">
           <Separator className="flex-1" />
-          <span className="text-sm text-muted-foreground">or</span>
+          <span className="text-sm text-muted-foreground">{tc('or')}</span>
           <Separator className="flex-1" />
         </div>
 
         <div className="space-y-2">
           <Button variant="outline" className="w-full" onClick={() => handleOAuth('google')}>
-            Continue with Google
+            {t('continueWithGoogle')}
           </Button>
           <Button variant="outline" className="w-full" onClick={() => handleOAuth('github')}>
-            Continue with GitHub
+            {t('continueWithGitHub')}
           </Button>
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
+          {t('alreadyHaveAccount')}{' '}
+          <Link href={ROUTES.login} className="text-primary hover:underline">
+            {t('signIn')}
           </Link>
         </p>
       </CardContent>

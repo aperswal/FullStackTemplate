@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { PLANS } from '@template/shared';
+import messages from '@/messages/en.json';
 
 describe('PLANS', () => {
   it('has free and pro plans', () => {
@@ -19,18 +20,6 @@ describe('PLANS', () => {
     it('has null externalPriceId', () => {
       expect(PLANS.free.externalPriceId).toBe(null);
     });
-
-    it('has name "Free"', () => {
-      expect(PLANS.free.name).toBe('Free');
-    });
-
-    it('has a non-empty features array', () => {
-      expect(PLANS.free.features.length).toBeGreaterThan(0);
-    });
-
-    it('includes "1 project" in features', () => {
-      expect(PLANS.free.features).toContain('1 project');
-    });
   });
 
   describe('pro plan', () => {
@@ -45,17 +34,31 @@ describe('PLANS', () => {
     it('has an externalPriceId string', () => {
       expect(typeof PLANS.pro.externalPriceId).toBe('string');
     });
+  });
 
-    it('has name "Pro"', () => {
-      expect(PLANS.pro.name).toBe('Pro');
+  describe('plan messages alignment', () => {
+    it('every plan key has a corresponding message entry', () => {
+      for (const key of Object.keys(PLANS)) {
+        const planMessages = messages.plans[key as keyof typeof messages.plans];
+        expect(planMessages).toBeDefined();
+        expect(planMessages.name).toBeTruthy();
+        expect(planMessages.description).toBeTruthy();
+        expect(planMessages.features.length).toBeGreaterThan(0);
+      }
     });
 
-    it('has at least as many features as free plan', () => {
-      expect(PLANS.pro.features.length).toBeGreaterThanOrEqual(PLANS.free.features.length);
+    it('free plan message has name "Free"', () => {
+      expect(messages.plans.free.name).toBe('Free');
     });
 
-    it('includes "Unlimited projects" in features', () => {
-      expect(PLANS.pro.features).toContain('Unlimited projects');
+    it('pro plan message has name "Pro"', () => {
+      expect(messages.plans.pro.name).toBe('Pro');
+    });
+
+    it('pro plan has at least as many features as free plan', () => {
+      expect(messages.plans.pro.features.length).toBeGreaterThanOrEqual(
+        messages.plans.free.features.length,
+      );
     });
   });
 });

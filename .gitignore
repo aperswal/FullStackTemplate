@@ -42,3 +42,7 @@ __pycache__
 
 # Go
 services/worker/worker
+
+# Setup script state (contains secrets)
+.setup-state
+.setup-env-vars
