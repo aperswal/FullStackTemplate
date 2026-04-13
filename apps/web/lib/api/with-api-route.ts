@@ -1,43 +1,46 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { ZodType } from 'zod';
 
 import { auth } from '@/lib/auth/server';
 import { createErrorResponse, ClientError, ServerError } from '@/lib/errors';
 import { createRequestLogger, withCorrelation } from '@/lib/logger';
 import { createRateLimiter, RATE_LIMITS } from '@/lib/rate-limit';
 import type { RateLimitConfig, RateLimitTier } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/client-ip';
 
 const MS_PER_SECOND = 1000;
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-interface ApiRouteOptions {
+const METHODS_WITH_BODY: HttpMethod[] = ['POST', 'PUT', 'PATCH'];
+
+interface ApiRouteOptions<T = unknown> {
   /** Authentication requirement for this route */
   auth: 'required' | 'optional' | 'none';
-  /** Rate limiting tier or custom config — every route must declare its limit */
+  /** Rate limiting tier or custom config - every route must declare its limit */
   rateLimit: RateLimitTier | RateLimitConfig;
-  /** Allowed HTTP methods — every route must declare what it accepts */
+  /** Allowed HTTP methods - every route must declare what it accepts */
   methods: HttpMethod[];
+  /** Optional Zod schema for request body validation (POST/PUT/PATCH) */
+  bodySchema?: ZodType<T>;
 }
 
-interface ApiContext {
+interface ApiContext<T = unknown> {
   /** Authenticated user session (present when auth is 'required', may be present when 'optional') */
   session: Awaited<ReturnType<typeof auth.api.getSession>> | null;
   /** Request-scoped logger with correlation ID */
   log: ReturnType<typeof createRequestLogger>['logger'];
   /** Correlation ID for this request */
   requestId: string;
+  /** Validated request body (present when bodySchema is defined and method is POST/PUT/PATCH) */
+  body: T;
 }
 
-type ApiHandler = (request: NextRequest, context: ApiContext) => Response | Promise<Response>;
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown'
-  );
-}
+type ApiHandler<T = unknown> = (
+  request: NextRequest,
+  context: ApiContext<T>,
+) => Response | Promise<Response>;
 
 function checkMethod(
   request: NextRequest,
@@ -70,7 +73,7 @@ async function checkRateLimit(
     typeof options.rateLimit === 'string' ? RATE_LIMITS[options.rateLimit] : options.rateLimit;
   try {
     const limiter = await createRateLimiter(config);
-    const identifier = getClientIp(request);
+    const identifier = getClientIp(request.headers);
     const result = await limiter.check(identifier);
 
     if (!result.success) {
@@ -128,7 +131,40 @@ async function authenticateRequest(
   return { session };
 }
 
-export function withApiRoute(options: ApiRouteOptions, handler: ApiHandler) {
+async function parseBody<T>(
+  request: NextRequest,
+  options: ApiRouteOptions<T>,
+  requestId: string,
+): Promise<{ body: T } | Response> {
+  if (!options.bodySchema || !METHODS_WITH_BODY.includes(request.method as HttpMethod)) {
+    return { body: undefined as T };
+  }
+
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    const response = createErrorResponse(new ClientError('Invalid JSON body', { statusCode: 400 }));
+    response.headers.set('x-request-id', requestId);
+    return response;
+  }
+
+  const parseResult = options.bodySchema.safeParse(rawBody);
+  if (!parseResult.success) {
+    const response = createErrorResponse(
+      new ClientError('Validation failed', {
+        statusCode: 400,
+        userMessage: parseResult.error.issues.map((i) => i.message).join(', '),
+      }),
+    );
+    response.headers.set('x-request-id', requestId);
+    return response;
+  }
+
+  return { body: parseResult.data };
+}
+
+export function withApiRoute<T = unknown>(options: ApiRouteOptions<T>, handler: ApiHandler<T>) {
   return async (request: NextRequest): Promise<Response> => {
     const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
     const { logger: log } = createRequestLogger(requestId);
@@ -149,8 +185,18 @@ export function withApiRoute(options: ApiRouteOptions, handler: ApiHandler) {
         return authResult;
       }
 
+      const bodyResult = await parseBody(request, options, requestId);
+      if (bodyResult instanceof Response) {
+        return bodyResult;
+      }
+
       try {
-        const response = await handler(request, { session: authResult.session, log, requestId });
+        const response = await handler(request, {
+          session: authResult.session,
+          log,
+          requestId,
+          body: bodyResult.body,
+        });
         response.headers.set('x-request-id', requestId);
         return response;
       } catch (err) {

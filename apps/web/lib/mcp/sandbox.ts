@@ -1,8 +1,15 @@
+// vm.runInNewContext is NOT a security boundary against untrusted code.
+// It prevents accidental access to Node.js globals but is trivially escapable.
+// This is acceptable here because:
+//   1. Code is provided by trusted MCP clients (AI assistants), not end users
+//   2. HTTP requests are restricted to the app's own origin
+// If this ever needs to run user-provided code, migrate to isolated-vm
+// or a subprocess-based sandbox.
 import { runInNewContext } from 'node:vm';
 
 import { ClientError } from '@/lib/errors';
 
-import type { AppSpec } from './types';
+import type { SiteSpec } from './types';
 
 export interface CallerAuth {
   cookies?: string;
@@ -51,7 +58,7 @@ function extractLinks(html: string): string[] {
       !href.startsWith('#') &&
       !href.startsWith('javascript:')
     ) {
-      links.push(`${text} → ${href}`);
+      links.push(`${text} -> ${href}`);
     }
   }
   return links;
@@ -68,11 +75,30 @@ function extractContent(html: string): string {
   ).slice(0, BROWSE_CONTENT_MAX_LENGTH);
 }
 
-export async function runSearch(code: string, appSpec: AppSpec): Promise<string> {
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export interface BrowseResult {
+  title: string;
+  headings: string[];
+  links: string[];
+  content: string;
+}
+
+export async function runSearch(code: string, siteSpec: SiteSpec): Promise<string> {
   const wrappedCode = `(${code})()`;
 
   const context = {
-    spec: structuredClone(appSpec),
+    spec: structuredClone(siteSpec),
     JSON,
     Array,
     Object,
@@ -139,12 +165,39 @@ function createSandboxedRequest(baseUrl: string, callerAuth: CallerAuth) {
   };
 }
 
+async function browsePage(
+  path: string,
+  baseUrl: string,
+  callerAuth: CallerAuth,
+): Promise<BrowseResult> {
+  const url = new URL(path, baseUrl);
+
+  if (url.origin !== new URL(baseUrl).origin) {
+    throw new ClientError(`Browse must target ${baseUrl}. Got: ${url.origin}`);
+  }
+
+  const headers: Record<string, string> = { Accept: 'text/html' };
+  applyAuthHeaders(headers, callerAuth);
+
+  const response = await fetch(url.toString(), { headers });
+  const html = await response.text();
+
+  return {
+    title: extractTitle(html),
+    headings: extractHeadings(html),
+    links: extractLinks(html),
+    content: extractContent(html),
+  };
+}
+
 function createSandboxContext(
   requestFn: ReturnType<typeof createSandboxedRequest>,
+  browseFn: (path: string) => Promise<BrowseResult>,
   logs: string[],
 ) {
   return {
     request: requestFn,
+    browse: browseFn,
     JSON,
     Array,
     Object,
@@ -175,7 +228,8 @@ export async function runExecute(
   const wrappedCode = `(${code})()`;
 
   const requestFn = createSandboxedRequest(baseUrl, callerAuth);
-  const context = createSandboxContext(requestFn, logs);
+  const browseWrapper = (path: string) => browsePage(path, baseUrl, callerAuth);
+  const context = createSandboxContext(requestFn, browseWrapper, logs);
 
   const result = await runInNewContext(wrappedCode, context, {
     timeout: EXECUTE_TIMEOUT_MS,
@@ -186,41 +240,4 @@ export async function runExecute(
     result: JSON.stringify(result, null, JSON_INDENT_SPACES),
     logs,
   };
-}
-
-export async function runBrowse(
-  path: string,
-  baseUrl: string,
-  callerAuth: CallerAuth,
-): Promise<{ title: string; headings: string[]; links: string[]; content: string }> {
-  const url = new URL(path, baseUrl);
-
-  if (url.origin !== new URL(baseUrl).origin) {
-    throw new ClientError(`Browse must target ${baseUrl}. Got: ${url.origin}`);
-  }
-
-  const headers: Record<string, string> = { Accept: 'text/html' };
-  applyAuthHeaders(headers, callerAuth);
-
-  const response = await fetch(url.toString(), { headers });
-  const html = await response.text();
-
-  return {
-    title: extractTitle(html),
-    headings: extractHeadings(html),
-    links: extractLinks(html),
-    content: extractContent(html),
-  };
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
 }

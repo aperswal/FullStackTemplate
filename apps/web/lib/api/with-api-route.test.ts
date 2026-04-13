@@ -34,13 +34,21 @@ vi.mock('@/lib/rate-limit', () => ({
   },
 }));
 
+import { z } from 'zod';
 import { withApiRoute } from './with-api-route';
 import { auth } from '@/lib/auth/server';
 import { NextResponse } from 'next/server';
 import { ClientError, ServerError } from '@/lib/errors';
 import { createRateLimiter } from '@/lib/rate-limit';
 
-function createRequest(method = 'GET', url = 'http://localhost:3000/api/test') {
+function createRequest(method = 'GET', url = 'http://localhost:3000/api/test', body?: string) {
+  if (body !== undefined) {
+    return new NextRequest(url, {
+      method,
+      body,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
   return new NextRequest(url, { method });
 }
 
@@ -206,13 +214,14 @@ describe('withApiRoute', () => {
   });
 
   it('accepts custom rate limit config object', async () => {
-    const handler = withApiRoute(
-      { auth: 'none', rateLimit: { limit: 5, window: 30 }, methods: ['GET'] },
-      () => NextResponse.json({ ok: true }),
+    const customConfig = { limit: 5, window: 30 };
+    const handler = withApiRoute({ auth: 'none', rateLimit: customConfig, methods: ['GET'] }, () =>
+      NextResponse.json({ ok: true }),
     );
 
     const response = await handler(createRequest());
     expect(response.status).toBe(200);
+    expect(createRateLimiter).toHaveBeenCalledWith(customConfig);
   });
 
   it('allows request through when rate limiter fails', async () => {
@@ -225,6 +234,65 @@ describe('withApiRoute', () => {
     );
 
     const response = await handler(createRequest());
+    expect(response.status).toBe(200);
+  });
+
+  it('returns 400 for invalid JSON body when bodySchema is provided', async () => {
+    const schema = z.object({ name: z.string() });
+    const handler = withApiRoute(
+      { auth: 'none', rateLimit: 'api', methods: ['POST'], bodySchema: schema },
+      () => NextResponse.json({ ok: true }),
+    );
+
+    const response = await handler(
+      createRequest('POST', 'http://localhost:3000/api/test', 'not json'),
+    );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.blame).toBe('client');
+  });
+
+  it('returns 400 when body fails Zod validation', async () => {
+    const schema = z.object({ name: z.string() });
+    const handler = withApiRoute(
+      { auth: 'none', rateLimit: 'api', methods: ['POST'], bodySchema: schema },
+      () => NextResponse.json({ ok: true }),
+    );
+
+    const response = await handler(
+      createRequest('POST', 'http://localhost:3000/api/test', JSON.stringify({ name: 123 })),
+    );
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe('ClientError');
+  });
+
+  it('passes validated body to handler when bodySchema succeeds', async () => {
+    const schema = z.object({ name: z.string() });
+    let receivedBody: unknown = null;
+    const handler = withApiRoute(
+      { auth: 'none', rateLimit: 'api', methods: ['POST'], bodySchema: schema },
+      (_req, ctx) => {
+        receivedBody = ctx.body;
+        return NextResponse.json({ ok: true });
+      },
+    );
+
+    const response = await handler(
+      createRequest('POST', 'http://localhost:3000/api/test', JSON.stringify({ name: 'test' })),
+    );
+    expect(response.status).toBe(200);
+    expect(receivedBody).toEqual({ name: 'test' });
+  });
+
+  it('skips body validation for GET requests even with bodySchema', async () => {
+    const schema = z.object({ name: z.string() });
+    const handler = withApiRoute(
+      { auth: 'none', rateLimit: 'api', methods: ['GET'], bodySchema: schema },
+      () => NextResponse.json({ ok: true }),
+    );
+
+    const response = await handler(createRequest('GET'));
     expect(response.status).toBe(200);
   });
 });

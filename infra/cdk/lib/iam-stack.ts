@@ -21,7 +21,7 @@ export class IamStack extends cdk.Stack {
 
     const { config, uploadPolicy, dbSecret, logGroup } = props;
 
-    // ECS task role — permissions the running application has
+    // ECS task role - permissions the running application has
     this.taskRole = new iam.Role(this, 'TaskRole', {
       roleName: `${config.appName}-task-role-${config.stageName}`,
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
@@ -31,7 +31,7 @@ export class IamStack extends cdk.Stack {
     // Attach S3 upload policy (previously orphaned)
     this.taskRole.addManagedPolicy(uploadPolicy);
 
-    // CloudWatch Logs — write to app log group
+    // CloudWatch Logs - write to app log group
     this.taskRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -40,7 +40,7 @@ export class IamStack extends cdk.Stack {
       }),
     );
 
-    // Secrets Manager — read database credentials
+    // Secrets Manager - read database credentials
     this.taskRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -115,7 +115,7 @@ export class IamStack extends cdk.Stack {
       new cdk.CfnOutput(this, 'DeployRoleArn', {
         value: this.deployRole.roleArn,
         description:
-          'GitHub Actions deploy role ARN — use with aws-actions/configure-aws-credentials',
+          'GitHub Actions deploy role ARN - use with aws-actions/configure-aws-credentials',
       });
     }
 

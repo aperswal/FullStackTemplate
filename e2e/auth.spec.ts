@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Authentication', () => {
   test('redirects unauthenticated users from dashboard to login', async ({ page }) => {
@@ -8,22 +8,28 @@ test.describe('Authentication', () => {
 
   test('login page renders correctly', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByText('Welcome back')).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    const mainContent = page.getByRole('main');
+    await expect(
+      mainContent.getByRole('heading', { level: 1, name: 'Welcome back' }),
+    ).toBeVisible();
+    await expect(mainContent.getByLabel('Email')).toBeVisible();
+    await expect(mainContent.getByLabel('Password')).toBeVisible();
+    await expect(mainContent.getByRole('button', { name: /^Sign in$/ })).toBeVisible();
   });
 
   test('signup page renders correctly', async ({ page }) => {
     await page.goto('/signup');
-    await expect(page.getByText('Create an account')).toBeVisible();
-    await expect(page.getByLabel('Name')).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
+    const mainContent = page.getByRole('main');
+    await expect(
+      mainContent.getByRole('heading', { level: 1, name: 'Create an account' }),
+    ).toBeVisible();
+    await expect(mainContent.getByLabel('Name')).toBeVisible();
+    await expect(mainContent.getByLabel('Email')).toBeVisible();
   });
 
   test('login page has link to signup', async ({ page }) => {
     await page.goto('/login');
-    const signupLink = page.getByRole('link', { name: /sign up/i });
+    const signupLink = page.getByRole('main').getByRole('link', { name: /sign up/i });
     await expect(signupLink).toBeVisible();
     await signupLink.click();
     await expect(page).toHaveURL(/\/signup/);
@@ -31,7 +37,7 @@ test.describe('Authentication', () => {
 
   test('signup page has link to login', async ({ page }) => {
     await page.goto('/signup');
-    const loginLink = page.getByRole('link', { name: /sign in/i });
+    const loginLink = page.getByRole('main').getByRole('link', { name: /sign in/i });
     await expect(loginLink).toBeVisible();
     await loginLink.click();
     await expect(page).toHaveURL(/\/login/);

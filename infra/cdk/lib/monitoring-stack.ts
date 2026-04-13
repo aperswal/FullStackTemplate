@@ -40,7 +40,7 @@ export class MonitoringStack extends cdk.Stack {
       this.alarmTopic.addSubscription(new sns_subscriptions.EmailSubscription(config.alarmEmail));
     }
 
-    // ─── Metric Filters ──────────────────────────────────────
+    // --- Metric Filters --------------------------------------
     const metricNamespace = `${config.appName}/${config.stageName}`;
 
     const errorMetricFilter = new logs.MetricFilter(this, 'ErrorMetricFilter', {
@@ -103,7 +103,7 @@ export class MonitoringStack extends cdk.Stack {
       defaultValue: 0,
     });
 
-    // ─── Alarms ──────────────────────────────────────────────
+    // --- Alarms ----------------------------------------------
 
     const errorAlarm = new cloudwatch.Alarm(this, 'ErrorRateAlarm', {
       alarmName: `${config.appName}-${config.stageName}-error-rate`,
@@ -120,7 +120,7 @@ export class MonitoringStack extends cdk.Stack {
 
     errorAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(this.alarmTopic));
 
-    // ─── CloudTrail ──────────────────────────────────────────
+    // --- CloudTrail ------------------------------------------
 
     const trailBucket = new s3.Bucket(this, 'TrailBucket', {
       bucketName: `${config.appName}-trail-${config.stageName}`,
@@ -151,7 +151,7 @@ export class MonitoringStack extends cdk.Stack {
       }),
     });
 
-    // ─── CloudWatch Dashboard ────────────────────────────────
+    // --- CloudWatch Dashboard --------------------------------
 
     const dashboard = new cloudwatch.Dashboard(this, 'AppDashboard', {
       dashboardName: `${config.appName}-${config.stageName}`,
@@ -159,7 +159,7 @@ export class MonitoringStack extends cdk.Stack {
 
     dashboard.addWidgets(
       new cloudwatch.TextWidget({
-        markdown: `# ${config.appName} — ${config.stageName}\nApplication health dashboard`,
+        markdown: `# ${config.appName} - ${config.stageName}\nApplication health dashboard`,
         width: 24,
         height: 1,
       }),
@@ -226,7 +226,7 @@ export class MonitoringStack extends cdk.Stack {
       }),
     );
 
-    // ─── Outputs ──────────────────────────────────────────────
+    // --- Outputs ----------------------------------------------
 
     new cdk.CfnOutput(this, 'LogGroupName', {
       value: this.logGroup.logGroupName,

@@ -1,5 +1,3 @@
-import { timingSafeEqual } from 'node:crypto';
-
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
@@ -7,19 +5,23 @@ import { createMcpServer } from '@/lib/mcp/server';
 import type { CallerAuth } from '@/lib/mcp/sandbox';
 import { env } from '@/lib/env';
 import { createRequestLogger } from '@/lib/logger';
-import { createRateLimiter, RATE_LIMITS } from '@/lib/rate-limit';
+import { createRateLimiter } from '@/lib/rate-limit';
+import type { RateLimitConfig } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/client-ip';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MS_PER_SECOND = 1000;
-const HTTP_UNAUTHORIZED = 401;
 const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const JSON_RPC_SERVER_ERROR = -32000;
 const SESSION_TTL_MINUTES = 30;
 const SECONDS_PER_MINUTE = 60;
 const SESSION_TTL_MS = SESSION_TTL_MINUTES * SECONDS_PER_MINUTE * MS_PER_SECOND;
+
+const RATE_LIMIT_PUBLIC: RateLimitConfig = { limit: 10, window: 60 };
+const RATE_LIMIT_AUTHENTICATED: RateLimitConfig = { limit: 30, window: 60 };
 
 const BASE_URL = env.NEXT_PUBLIC_APP_URL;
 
@@ -41,28 +43,9 @@ function cleanupStaleSessions(): void {
   }
 }
 
-function isAuthorized(request: Request): boolean {
-  const mcpApiKey = env.MCP_API_KEY;
-
-  if (mcpApiKey === undefined || mcpApiKey === '') {
-    return env.NODE_ENV !== 'production';
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader === null || authHeader === '') {
-    return false;
-  }
-
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-
-  const tokenBuffer = Buffer.from(token);
-  const keyBuffer = Buffer.from(mcpApiKey);
-
-  if (tokenBuffer.length !== keyBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(tokenBuffer, keyBuffer);
+function hasSessionCookie(request: Request): boolean {
+  const cookies = request.headers.get('cookie') ?? '';
+  return cookies.includes('better-auth.session_token');
 }
 
 function extractCallerAuth(request: Request): CallerAuth {
@@ -83,19 +66,12 @@ function jsonError(status: number, message: string, requestId: string): Response
   );
 }
 
-function getClientIp(request: Request): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown'
-  );
-}
-
 async function applyRateLimit(request: Request, requestId: string): Promise<Response | null> {
   const { logger: log } = createRequestLogger(requestId);
   try {
-    const limiter = await createRateLimiter(RATE_LIMITS.mcp);
-    const result = await limiter.check(getClientIp(request));
+    const config = hasSessionCookie(request) ? RATE_LIMIT_AUTHENTICATED : RATE_LIMIT_PUBLIC;
+    const limiter = await createRateLimiter(config);
+    const result = await limiter.check(getClientIp(request.headers));
     if (!result.success) {
       const retryAfter = Math.max(0, result.reset - Math.floor(Date.now() / MS_PER_SECOND));
       log.warn({ limit: result.limit }, 'MCP rate limit exceeded');
@@ -173,10 +149,6 @@ async function handleMcpRequest(request: Request): Promise<Response> {
   const rateLimitResponse = await applyRateLimit(request, requestId);
   if (rateLimitResponse !== null) {
     return rateLimitResponse;
-  }
-
-  if (!isAuthorized(request)) {
-    return jsonError(HTTP_UNAUTHORIZED, 'Unauthorized: missing or invalid MCP_API_KEY', requestId);
   }
 
   try {

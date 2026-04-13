@@ -1,37 +1,21 @@
-export interface EndpointSpec {
+export interface SitePage {
   path: string;
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  auth: boolean;
+  title: string;
   description: string;
-  request?: Record<string, string>;
-  response?: Record<string, string>;
-  headers?: Record<string, string>;
+  auth: boolean;
 }
 
-export interface PageRoute {
-  path: string;
-  group: 'marketing' | 'auth' | 'app';
-  auth: boolean;
-  description: string;
-}
-
-export interface SchemaColumn {
+export interface SiteAction {
   name: string;
-  type: string;
-  nullable: boolean;
-  defaultValue?: string;
+  description: string;
+  auth: boolean;
+  method: string;
+  path: string;
+  input?: Record<string, string>;
 }
 
-export interface SchemaSpec {
-  table: string;
-  columns: SchemaColumn[];
-  foreignKeys?: Array<{ column: string; references: string }>;
-  uniqueConstraints?: string[];
-}
-
-export interface AppSpec {
-  info: { title: string; version: string; baseUrl: string };
-  endpoints: EndpointSpec[];
-  routes: PageRoute[];
-  schemas: SchemaSpec[];
+export interface SiteSpec {
+  site: { name: string; description: string; features: string[] };
+  pages: SitePage[];
+  actions: SiteAction[];
 }

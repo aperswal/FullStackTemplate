@@ -41,7 +41,7 @@ select = [
   "E", "F", "I", "W", "UP", "B", "SIM",
   "A", "C4", "RUF", "PT", "T20", "TRY",
   "RET", "SLF", "ARG", "ERA", "PLC", "PLE", "PLR", "PLW",
-  # New — parity with TypeScript enforcement
+  # New - parity with TypeScript enforcement
   "N",     # pep8-naming (match TS naming-convention)
   "D",     # pydocstyle (match TS explicit-module-boundary-types)
   "C90",   # McCabe complexity (match TS complexity: 10)
@@ -52,7 +52,7 @@ select = [
   "PERF",  # performance anti-patterns
   "FURB",  # modernization
   "LOG",   # logging best practices
-  # Phase 2 — comprehensive quality & correctness
+  # Phase 2 - comprehensive quality & correctness
   "BLE",   # blind except (bare except:)
   "EM",    # error messages must be variables, not f-strings in raise
   "DTZ",   # datetime.now() must specify timezone
@@ -71,10 +71,10 @@ select = [
 ]
 ignore = [
   "E501",   # line length handled by formatter
-  "D100",   # module docstrings — too noisy for small modules
+  "D100",   # module docstrings - too noisy for small modules
   "D104",   # package docstrings (__init__.py)
   "D107",   # __init__ docstrings
-  "TD003",  # TODO issue link — too strict for early development
+  "TD003",  # TODO issue link - too strict for early development
   "FIX002", # TODO allowed, only FIXME/BUG blocked
 ]
 

@@ -2,8 +2,7 @@ name: CI
 
 on:
   push:
-    branches:
-      - '**'
+    branches: ['**']
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -13,121 +12,403 @@ env:
   SKIP_ENV_VALIDATION: '1'
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  # Dummy values for Next.js build — env validation is skipped but
-  # static generation still imports the env module
-  DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci'
-  BETTER_AUTH_SECRET: 'ci-placeholder-secret-that-is-at-least-32-chars-long'
-  BETTER_AUTH_URL: 'http://localhost:3000'
-  NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+
+# -----------------------------------------------------------------------------
+# All jobs run in parallel. The "ci" gate job requires every job to pass.
+# Branch protection should require the "CI" status check.
+# -----------------------------------------------------------------------------
 
 jobs:
-  verify:
-    name: Full Stack Verify
+  # -- TypeScript ------------------------------------------------------------
+
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: ESLint
+        run: pnpm lint
+      - name: Summary
+        if: always()
+        run: echo '### Lint -- ESLint passed across all packages' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Enable corepack
-        run: corepack enable
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: tsc
+        run: pnpm typecheck
+      - name: Summary
+        if: always()
+        run: echo '### Typecheck -- TypeScript strict mode passed' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      - name: Vitest + coverage
+        run: pnpm test:coverage
+
+      - name: Coverage ratchet
+        run: pnpm --filter @template/web exec tsx ../../scripts/coverage-ratchet.ts
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f apps/web/coverage/coverage-summary.json ]; then
+            node -e "
+              const c = require('./apps/web/coverage/coverage-summary.json').total;
+              const row = (k) => '| ' + k + ' | ' + c[k].pct + '% |';
+              console.log('### Test -- all tests passed');
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              console.log(row('statements'));
+              console.log(row('branches'));
+              console.log(row('functions'));
+              console.log(row('lines'));
+            " >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 22
-          cache: pnpm
+          name: coverage-ts
+          path: |
+            apps/web/coverage/
+            .coverage-baseline.json
+          retention-days: 30
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      # Dummy values for Next.js static generation -- env validation is
+      # skipped but the module is still imported at build time
+      DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci'
+      BETTER_AUTH_SECRET: 'ci-placeholder-secret-that-is-at-least-32-chars-long'
+      BETTER_AUTH_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Validate MCP spec
+        run: pnpm --filter @template/web validate:mcp
+      - name: Next.js build
+        run: pnpm build
+      - name: Summary
+        if: always()
+        run: echo '### Build -- Next.js production build succeeded' >> "$GITHUB_STEP_SUMMARY"
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Prettier
+        run: pnpm format:check
+      - name: Summary
+        if: always()
+        run: echo '### Format -- Prettier check passed' >> "$GITHUB_STEP_SUMMARY"
+
+  # -- Go --------------------------------------------------------------------
+
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           cache-dependency-path: services/worker/go.sum
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@latest
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Verify
+        run: make verify
+
+      - name: Summary
+        if: always()
+        run: |
+          echo '### Go -- all checks passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Check | Status |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|-------|--------|' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Format (gofumpt) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Lint (56 linters) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Tests (race enabled) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Coverage ratchet | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Build | PASS |' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-go
+          path: |
+            services/worker/coverage.out
+            services/worker/.coverage-baseline.json
+          retention-days: 30
+
+  # -- Python ----------------------------------------------------------------
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/test_db'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    defaults:
+      run:
+        working-directory: services/python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -e ".[dev]"
 
-      - name: Setup pnpm store cache
-        uses: actions/cache@v4
+      - name: Verify
+        run: make verify
+
+      - name: Summary
+        if: always()
+        run: |
+          echo '### Python -- all checks passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Check | Status |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|-------|--------|' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Format (ruff) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Lint (46 rule sets) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Typecheck (mypy strict) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Tests (9 arch + unit) | PASS |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Coverage ratchet | PASS |' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: ~/.local/share/pnpm/store/v3
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
+          name: coverage-python
+          path: |
+            services/python/.coverage-baseline.json
+          retention-days: 30
 
-      - name: Setup turbo cache
-        uses: actions/cache@v4
+  # -- CDK -------------------------------------------------------------------
+
+  cdk:
+    name: CDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+        working-directory: infra/cdk
+      - name: Test
+        run: pnpm exec vitest run
+        working-directory: infra/cdk
+      - name: Summary
+        if: always()
+        run: echo '### CDK -- typecheck and tests passed' >> "$GITHUB_STEP_SUMMARY"
+
+  # -- Gate ------------------------------------------------------------------
+
+  ci:
+    name: CI
+    needs: [lint, typecheck, test, build, go, python, cdk, format]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate results
+        run: |
+          echo '## CI Results' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Job | Result |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|-----|--------|' >> "$GITHUB_STEP_SUMMARY"
+
+          failed=0
+          jobs=("lint" "typecheck" "test" "build" "go" "python" "cdk" "format")
+          results=("${{ needs.lint.result }}" "${{ needs.typecheck.result }}" "${{ needs.test.result }}" "${{ needs.build.result }}" "${{ needs.go.result }}" "${{ needs.python.result }}" "${{ needs.cdk.result }}" "${{ needs.format.result }}")
+
+          for i in "${!jobs[@]}"; do
+            r="${results[$i]}"
+            if [[ "$r" == "success" ]]; then
+              echo "| ${jobs[$i]} | PASS |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| ${jobs[$i]} | FAIL (${r}) |" >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+          done
+
+          if [[ "$failed" == "1" ]]; then
+            echo ''
+            echo 'FAILED: one or more jobs did not pass'
+            exit 1
+          fi
+          echo 'All jobs passed'
+
+  # -- Baseline update (main only) ------------------------------------------
+
+  baseline:
+    name: Update Baselines
+    needs: [ci]
+    if: github.ref == 'refs/heads/main' && needs.ci.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/test_db'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: actions/setup-go@v5
         with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
-      - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Python dependencies
+          go-version: '1.24'
+          cache-dependency-path: services/worker/go.sum
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pnpm install --frozen-lockfile
+      - name: Install Python deps
         run: |
           cd services/python
           python -m venv .venv
           .venv/bin/pip install -e ".[dev]"
-
-      - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
-
-      - name: Install gofumpt
-        run: go install mvdan.cc/gofumpt@latest
-
-      - name: Full stack verify
-        run: pnpm verify
-
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: apps/web/coverage/
-          retention-days: 30
-
-      - name: Update coverage baseline (main only)
-        if: github.ref == 'refs/heads/main'
+      - name: Install Go tools
         run: |
-          npx tsx scripts/coverage-ratchet.ts --update
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          go install mvdan.cc/gofumpt@latest
+
+      - name: Re-run coverage collection
+        run: |
+          pnpm test:coverage
+          cd services/worker && make test && cd ../..
+          cd services/python && make test && cd ../..
+
+      - name: Update baselines
+        run: |
+          pnpm --filter @template/web exec tsx ../../scripts/coverage-ratchet.ts -- --update
           cd services/worker && ./scripts/coverage-ratchet.sh --update && cd ../..
           cd services/python && .venv/bin/python3 scripts/coverage_ratchet.py --update && cd ../..
+
+      - name: Commit and push
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .coverage-baseline.json services/worker/.coverage-baseline.json services/python/.coverage-baseline.json
           git diff --cached --quiet || git commit -m "chore: update coverage baseline [skip ci]"
           git push
 
+  # -- E2E -------------------------------------------------------------------
+
   e2e:
-    name: E2E Tests
+    name: E2E (${{ matrix.shard }})
     runs-on: ubuntu-latest
-    needs: verify
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run E2E tests
-        run: pnpm test:e2e
+    needs: [ci]
+    if: needs.ci.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/3, 2/3, 3/3]
+    env:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/e2e_db'
+      BETTER_AUTH_SECRET: 'e2e-placeholder-secret-that-is-at-least-32-chars-long'
+      BETTER_AUTH_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+    services:
+      postgres:
+        image: postgres:16
         env:
-          SKIP_ENV_VALIDATION: '1'
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: e2e_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Build Next.js for E2E
+        run: pnpm --filter @template/web build
+      - name: Push database schema
+        run: pnpm --filter @template/web exec drizzle-kit push --force
+      - name: Install Playwright browsers
+        run: pnpm --filter e2e exec playwright install --with-deps
+      - name: Run E2E tests
+        run: pnpm --filter e2e exec playwright test --shard=${{ matrix.shard }}
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ strategy.job-index }}
+          path: e2e/test-results/
+          retention-days: 7

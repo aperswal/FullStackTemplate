@@ -12,7 +12,7 @@ run_write_env() {
     return 1
   fi
 
-  # ─── Handle existing .env ───────────────────────────────────
+  # --- Handle existing .env -----------------------------------
   if [ -f "$env_file" ]; then
     echo ""
     info "Existing .env file found."
@@ -66,11 +66,11 @@ run_write_env() {
     esac
   fi
 
-  # ─── Write .env using .env.example as template ──────────────
+  # --- Write .env using .env.example as template --------------
   local output=""
 
   while IFS= read -r line; do
-    # Comment or blank line — pass through as-is
+    # Comment or blank line - pass through as-is
     if [[ "$line" =~ ^# ]] || [[ -z "$line" ]]; then
       output+="$line"$'\n'
       continue
@@ -91,7 +91,7 @@ run_write_env() {
       continue
     fi
 
-    # Anything else — pass through
+    # Anything else - pass through
     output+="$line"$'\n'
   done < "$example_file"
 

@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
 import { createErrorResponse, ServerError, ClientError } from '@/lib/errors';
+import { getClientIp } from '@/lib/client-ip';
 import messages from '@/messages/en.json';
 
 export const runtime = 'edge';
@@ -11,6 +12,7 @@ const MS_PER_SECOND = 1000;
 // Simple edge-compatible rate limiter (30 req/min per IP)
 const OG_RATE_LIMIT = 30;
 const OG_RATE_WINDOW = 60;
+const MAX_OG_STORE_SIZE = 10_000;
 const ogRateStore = new Map<string, { count: number; resetAt: number }>();
 
 function checkOgRateLimit(ip: string): boolean {
@@ -18,6 +20,16 @@ function checkOgRateLimit(ip: string): boolean {
   const entry = ogRateStore.get(ip);
 
   if (!entry || entry.resetAt <= now) {
+    if (ogRateStore.size >= MAX_OG_STORE_SIZE) {
+      for (const [key, val] of ogRateStore) {
+        if (val.resetAt <= now) {
+          ogRateStore.delete(key);
+        }
+      }
+      if (ogRateStore.size >= MAX_OG_STORE_SIZE) {
+        return true;
+      }
+    }
     ogRateStore.set(ip, { count: 1, resetAt: now + OG_RATE_WINDOW });
     return true;
   }
@@ -78,10 +90,7 @@ function OgImageTemplate({ title, appName }: { title: string; appName: string })
 
 export function GET(request: NextRequest): Response {
   const requestId = crypto.randomUUID();
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
+  const ip = getClientIp(request.headers);
 
   if (!checkOgRateLimit(ip)) {
     const response = createErrorResponse(

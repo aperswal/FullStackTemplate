@@ -2,7 +2,7 @@ import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
 export const env = createEnv({
-  // ─── Server-side variables ───────────────────────────────────
+  // --- Server-side variables -----------------------------------
   server: {
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     DEPLOY_TARGET: z.enum(['vercel', 'docker']).default('docker'),
@@ -14,13 +14,13 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.string().url(),
 
-    // OAuth providers (optional — gracefully disabled if missing)
+    // OAuth providers (optional - gracefully disabled if missing)
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
 
-    // Payments (Stripe — optional, disabled if not set)
+    // Payments (Stripe - optional, disabled if not set)
     STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
     STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
     STRIPE_PRO_PRICE_ID: z.string().optional(),
@@ -56,18 +56,15 @@ export const env = createEnv({
     // Logging
     LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional(),
 
-    // MCP (optional — secures the /api/mcp endpoint in production)
-    MCP_API_KEY: z.string().min(32).optional(),
-
-    // Rate limiting (Upstash — optional, falls back to in-memory for Docker)
+    // Rate limiting (Upstash - optional, falls back to in-memory for Docker)
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
-    // OpenTelemetry (optional — traces exported to this endpoint)
+    // OpenTelemetry (optional - traces exported to this endpoint)
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   },
 
-  // ─── Client-side variables (NEXT_PUBLIC_*) ───────────────────
+  // --- Client-side variables (NEXT_PUBLIC_*) -------------------
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().startsWith('pk_').optional(),
@@ -75,7 +72,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
   },
 
-  // ─── Runtime values ──────────────────────────────────────────
+  // --- Runtime values ------------------------------------------
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     DEPLOY_TARGET: process.env.DEPLOY_TARGET,
@@ -106,7 +103,6 @@ export const env = createEnv({
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
     LOG_LEVEL: process.env.LOG_LEVEL,
-    MCP_API_KEY: process.env.MCP_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,

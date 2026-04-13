@@ -1,5 +1,5 @@
 /**
- * AI-friendly coverage reporter — analyzes uncovered code and provides
+ * AI-friendly coverage reporter - analyzes uncovered code and provides
  * actionable guidance for writing missing tests.
  *
  * Reads Istanbul-format coverage data from apps/web/coverage/coverage-final.json
@@ -54,7 +54,7 @@ function getBranchDescription(type: string, branchIndex: number, totalBranches: 
     case 'if':
       return branchIndex === 0
         ? 'if-true branch (condition is truthy)'
-        : 'if-false/else branch (condition is falsy — even without an explicit else block, this path needs testing)';
+        : 'if-false/else branch (condition is falsy - even without an explicit else block, this path needs testing)';
     case 'switch':
       return `switch case #${branchIndex + 1} of ${totalBranches}`;
     case 'cond-expr':
@@ -114,7 +114,7 @@ function main() {
           const context = sourceLines?.[line - 1]?.trim() ?? '';
           const desc = getBranchDescription(branch.type, i, counts.length);
           issues.push(
-            `  LINE ${line}: Untested ${branch.type} branch — ${desc}\n` +
+            `  LINE ${line}: Untested ${branch.type} branch - ${desc}\n` +
               `    Code: ${context}\n` +
               `    Suggestion: Add a test that exercises this specific path`,
           );

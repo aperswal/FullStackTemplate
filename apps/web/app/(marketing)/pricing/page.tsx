@@ -30,12 +30,43 @@ interface PlanCardProps {
   tp: PlanTranslations;
 }
 
-function PlanCard({ planKey, price, features, priceId, t, tp }: PlanCardProps) {
+function FeatureList({ features }: { features: string[] }) {
   return (
-    <Card className={planKey === 'pro' ? 'border-primary' : ''}>
+    <ul className="space-y-3">
+      {features.map((feature: string) => (
+        <li key={feature} className="flex items-center gap-2 text-sm">
+          <svg
+            className="h-4 w-4 shrink-0 text-primary"
+            aria-hidden="true"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          {feature}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PlanCard({ planKey, price, features, priceId, t, tp }: PlanCardProps) {
+  const planName = tp(`${planKey}.name`);
+  const titleId = `plan-${planKey}-title`;
+
+  return (
+    <Card
+      role="article"
+      aria-labelledby={titleId}
+      className={planKey === 'pro' ? 'border-primary' : ''}
+    >
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">{tp(`${planKey}.name`)}</CardTitle>
+          <CardTitle id={titleId} className="text-xl">
+            {planName}
+          </CardTitle>
           {planKey === 'pro' && <Badge>{t('popular')}</Badge>}
         </div>
         <CardDescription>{tp(`${planKey}.description`)}</CardDescription>
@@ -45,26 +76,10 @@ function PlanCard({ planKey, price, features, priceId, t, tp }: PlanCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-3">
-          {features.map((feature: string) => (
-            <li key={feature} className="flex items-center gap-2 text-sm">
-              <svg
-                className="h-4 w-4 shrink-0 text-primary"
-                aria-hidden="true"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              {feature}
-            </li>
-          ))}
-        </ul>
+        <FeatureList features={features} />
         <div className="mt-8">
           {priceId !== undefined && priceId !== '' ? (
-            <CheckoutButton priceId={priceId} planName={tp(`${planKey}.name`)} />
+            <CheckoutButton priceId={priceId} planName={planName} />
           ) : (
             <Link
               href={ROUTES.signup}

@@ -100,7 +100,7 @@ exports[`DatabaseStack > matches snapshot 1`] = `
     },
     "DbSecurityGroupE9D701AD": {
       "Properties": {
-        "GroupDescription": "Security group for RDS PostgreSQL — only accepts traffic from app services",
+        "GroupDescription": "Security group for RDS PostgreSQL - only accepts traffic from app services",
         "GroupName": "fullstack-template-db-sg-dev",
         "SecurityGroupEgress": [
           {

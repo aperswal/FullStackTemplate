@@ -13,7 +13,7 @@ run_start_services() {
     fi
   fi
 
-  # ─── Check ports ────────────────────────────────────────────
+  # --- Check ports --------------------------------------------
   if is_port_in_use 5432; then
     warn "Port 5432 is already in use. Postgres may already be running."
     if ! confirm "Continue anyway?" "Y"; then
@@ -25,7 +25,7 @@ run_start_services() {
     warn "Port 1025 is already in use. Mailpit may already be running."
   fi
 
-  # ─── Start Docker services ─────────────────────────────────
+  # --- Start Docker services ---------------------------------
   info "Starting database and mail services..."
   cd "$PROJECT_ROOT" || return 1
   docker compose up -d db mailpit
@@ -48,7 +48,7 @@ run_start_services() {
     return 1
   fi
 
-  # ─── Install dependencies ───────────────────────────────────
+  # --- Install dependencies -----------------------------------
   if [ ! -d "$PROJECT_ROOT/node_modules" ] || [ ! -d "$PROJECT_ROOT/apps/web/node_modules" ]; then
     info "Installing Node dependencies..."
     pnpm install
@@ -56,7 +56,7 @@ run_start_services() {
     success "Node dependencies already installed"
   fi
 
-  # ─── Run migrations ────────────────────────────────────────
+  # --- Run migrations ----------------------------------------
   info "Running database migrations..."
   cd "$PROJECT_ROOT/apps/web" || return 1
 
@@ -69,7 +69,7 @@ run_start_services() {
 
   cd "$PROJECT_ROOT" || return 1
 
-  # ─── Seed (optional) ───────────────────────────────────────
+  # --- Seed (optional) ---------------------------------------
   echo ""
   if confirm "Seed database with test data (admin@example.com)?" "Y"; then
     info "Seeding database..."

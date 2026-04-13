@@ -264,7 +264,7 @@ export function handleChargeRefunded(event: Stripe.Event, log: Logger): void {
   const charge = event.data.object as Stripe.Charge;
   log.info(
     { chargeId: charge.id, amountRefunded: charge.amount_refunded },
-    'Charge refunded — subscription status changes handled by subscription events',
+    'Charge refunded - subscription status changes handled by subscription events',
   );
 }
 

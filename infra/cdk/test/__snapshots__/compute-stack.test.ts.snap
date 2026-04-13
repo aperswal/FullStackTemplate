@@ -295,7 +295,7 @@ exports[`ComputeStack > matches snapshot 1`] = `
     },
     "AlbSecurityGroup86A59E99": {
       "Properties": {
-        "GroupDescription": "Security group for ALB — accepts public HTTP/HTTPS traffic",
+        "GroupDescription": "Security group for ALB - accepts public HTTP/HTTPS traffic",
         "GroupName": "fullstack-template-alb-sg-dev",
         "SecurityGroupEgress": [
           {
@@ -328,7 +328,7 @@ exports[`ComputeStack > matches snapshot 1`] = `
     },
     "AppSecurityGroupC396D536": {
       "Properties": {
-        "GroupDescription": "Security group for Fargate tasks — accepts traffic only from ALB",
+        "GroupDescription": "Security group for Fargate tasks - accepts traffic only from ALB",
         "GroupName": "fullstack-template-app-sg-dev",
         "SecurityGroupEgress": [
           {

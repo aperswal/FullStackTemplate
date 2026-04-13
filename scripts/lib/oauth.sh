@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # OAuth setup: GitHub and Google. Opens browser, prompts user to paste credentials.
-# Both providers are independently skippable — the auth server handles missing OAuth gracefully.
+# Both providers are independently skippable - the auth server handles missing OAuth gracefully.
 
 run_oauth() {
   step "Setting up OAuth providers"
@@ -14,7 +14,7 @@ run_oauth() {
   app_url=$(env_get "NEXT_PUBLIC_APP_URL")
   app_url="${app_url:-http://localhost:3000}"
 
-  # ─── GitHub OAuth ───────────────────────────────────────────
+  # --- GitHub OAuth -------------------------------------------
   echo ""
   if confirm "Set up GitHub OAuth?" "Y"; then
     info "Opening GitHub OAuth App settings..."
@@ -41,7 +41,7 @@ run_oauth() {
     info "Skipping GitHub OAuth"
   fi
 
-  # ─── Google OAuth ───────────────────────────────────────────
+  # --- Google OAuth -------------------------------------------
   echo ""
   if confirm "Set up Google OAuth?" "Y"; then
     info "Opening Google Cloud Console..."

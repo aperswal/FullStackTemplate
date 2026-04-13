@@ -1,5 +1,5 @@
 /**
- * Coverage ratchet — prevents coverage from decreasing between PRs.
+ * Coverage ratchet - prevents coverage from decreasing between PRs.
  *
  * Compares current coverage (from apps/web/coverage/coverage-summary.json)
  * against the baseline (.coverage-baseline.json at repo root).
@@ -60,7 +60,7 @@ function main() {
   }
 
   if (!existsSync(BASELINE_PATH)) {
-    console.log('No baseline found — creating initial baseline from current coverage.');
+    console.log('No baseline found - creating initial baseline from current coverage.');
     const baseline: Record<string, number> = {};
     for (const m of metrics) {
       baseline[m] = current.total[m].pct;

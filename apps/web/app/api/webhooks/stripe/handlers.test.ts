@@ -691,7 +691,7 @@ describe('handleChargeRefunded', () => {
 
     expect(log.info).toHaveBeenCalledWith(
       expect.objectContaining({ chargeId: 'ch_123', amountRefunded: 2000 }),
-      'Charge refunded — subscription status changes handled by subscription events',
+      'Charge refunded - subscription status changes handled by subscription events',
     );
   });
 
