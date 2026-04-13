@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
+import { env } from '@/lib/env';
+
+const BASE_URL = env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
 
 interface OrganizationLdInput {
   name: string;
@@ -16,7 +18,7 @@ export function organizationJsonLd({
     '@type': 'Organization',
     name,
     url,
-    ...(logo && { logo }),
+    ...(logo !== undefined && logo !== '' ? { logo } : {}),
   };
 }
 
@@ -76,7 +78,7 @@ interface JsonLdScriptProps {
  * Render a JSON-LD script tag for structured data.
  * Use inside a server component's return JSX.
  */
-export function JsonLdScript({ data }: JsonLdScriptProps) {
+export function JsonLdScript({ data }: JsonLdScriptProps): React.JSX.Element {
   return (
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );

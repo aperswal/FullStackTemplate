@@ -17,6 +17,9 @@ out
 
 # Testing
 coverage
+coverage.out
+coverage.json
+.coverage
 playwright-report
 test-results
 
@@ -39,6 +42,7 @@ __pycache__
 *.pyc
 .venv
 .ruff_cache
+*.egg-info
 
 # Go
 services/worker/worker

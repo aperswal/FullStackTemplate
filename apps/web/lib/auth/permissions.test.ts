@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ClientError } from '@/lib/errors';
 
 import { hasMinimumRole, hasPermission, requireRole } from './permissions';
 
@@ -54,7 +55,14 @@ describe('requireRole', () => {
     expect(() => requireRole('admin', 'pro')).not.toThrow();
   });
 
-  it('throws when role is insufficient', () => {
-    expect(() => requireRole('free', 'pro')).toThrow('Insufficient permissions');
+  it('throws ClientError with 403 when role is insufficient', () => {
+    expect(() => requireRole('free', 'pro')).toThrow(ClientError);
+    try {
+      requireRole('free', 'pro');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ClientError);
+      expect((err as ClientError).statusCode).toBe(403);
+      expect((err as ClientError).blame).toBe('client');
+    }
   });
 });

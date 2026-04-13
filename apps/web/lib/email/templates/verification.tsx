@@ -19,7 +19,10 @@ interface VerificationEmailProps {
   userName: string;
 }
 
-export function VerificationEmail({ verificationUrl, userName }: VerificationEmailProps) {
+export function VerificationEmail({
+  verificationUrl,
+  userName,
+}: VerificationEmailProps): React.JSX.Element {
   return (
     <Html>
       <Head />

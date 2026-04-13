@@ -1,5 +1,6 @@
 import { ROLE_HIERARCHY } from '@template/shared';
 import type { UserRole } from '@template/shared';
+import { ClientError } from '@/lib/errors';
 
 export function hasMinimumRole(userRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
@@ -22,6 +23,9 @@ export function hasPermission(userRole: UserRole, permission: Permission): boole
 
 export function requireRole(userRole: UserRole, requiredRole: UserRole): void {
   if (!hasMinimumRole(userRole, requiredRole)) {
-    throw new Error(`Insufficient permissions: requires ${requiredRole} role`);
+    throw new ClientError(`Insufficient permissions: requires ${requiredRole} role`, {
+      statusCode: 403,
+      userMessage: 'You do not have permission to perform this action.',
+    });
   }
 }

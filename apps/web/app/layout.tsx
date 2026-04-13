@@ -5,6 +5,8 @@ import { getLocale, getMessages } from 'next-intl/server';
 
 import { Providers } from '@/components/providers';
 import { CookieConsentBanner } from '@/components/cookie-consent';
+import { Toaster } from '@/components/ui/sonner';
+import { env } from '@/lib/env';
 import messages from '@/messages/en.json';
 
 import './globals.css';
@@ -19,7 +21,7 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
+const BASE_URL = env.NEXT_PUBLIC_APP_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -54,7 +56,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION ?? undefined,
+    google: env.GOOGLE_SITE_VERIFICATION ?? undefined,
   },
 };
 
@@ -62,21 +64,22 @@ export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): Promise<React.ReactNode> {
   const locale = await getLocale();
   const intlMessages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={intlMessages}>
           <Providers
-            posthogKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-            posthogHost={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+            posthogKey={env.NEXT_PUBLIC_POSTHOG_KEY}
+            posthogHost={env.NEXT_PUBLIC_POSTHOG_HOST}
           >
             {children}
           </Providers>
           <CookieConsentBanner />
+          <Toaster />
         </NextIntlClientProvider>
       </body>
     </html>

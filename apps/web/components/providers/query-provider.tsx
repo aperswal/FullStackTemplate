@@ -4,17 +4,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
 
+const MS_PER_MINUTE = 60_000;
+const STALE_TIME_MS = MS_PER_MINUTE;
+const GC_TIME_MINUTES = 5;
+const GC_TIME_MS = GC_TIME_MINUTES * MS_PER_MINUTE;
+
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000,
-        gcTime: 5 * 60 * 1000,
-        retry: 1,
+        staleTime: STALE_TIME_MS,
+        gcTime: GC_TIME_MS,
         refetchOnWindowFocus: false,
-      },
-      mutations: {
-        retry: 0,
       },
     },
   });
@@ -26,13 +27,11 @@ function getQueryClient() {
   if (typeof window === 'undefined') {
     return makeQueryClient();
   }
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient();
-  }
+  browserQueryClient ??= makeQueryClient();
   return browserQueryClient;
 }
 
-export function QueryProvider({ children }: { children: ReactNode }) {
+export function QueryProvider({ children }: { children: ReactNode }): ReactNode {
   const [queryClient] = useState(getQueryClient);
 
   return (

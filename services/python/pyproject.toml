@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
   "httpx>=0.27",
   "pydantic>=2.10",
+  "pydantic-settings>=2.0",
   "python-dotenv>=1.0",
   "psycopg[binary]>=3.2",
 ]
@@ -26,6 +27,7 @@ jupyter = [
 ]
 dev = [
   "pytest>=8.3",
+  "pytest-cov>=6.0",
   "ruff>=0.8",
   "mypy>=1.14",
 ]
@@ -34,8 +36,102 @@ dev = [
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "UP", "B", "SIM"]
-ignore = ["E501"]
+select = [
+  # Existing
+  "E", "F", "I", "W", "UP", "B", "SIM",
+  "A", "C4", "RUF", "PT", "T20", "TRY",
+  "RET", "SLF", "ARG", "ERA", "PLC", "PLE", "PLR", "PLW",
+  # New — parity with TypeScript enforcement
+  "N",     # pep8-naming (match TS naming-convention)
+  "D",     # pydocstyle (match TS explicit-module-boundary-types)
+  "C90",   # McCabe complexity (match TS complexity: 10)
+  "S",     # bandit security checks
+  "FBT",   # boolean trap detection
+  "TCH",   # type-checking imports
+  "PIE",   # miscellaneous quality
+  "PERF",  # performance anti-patterns
+  "FURB",  # modernization
+  "LOG",   # logging best practices
+  # Phase 2 — comprehensive quality & correctness
+  "BLE",   # blind except (bare except:)
+  "EM",    # error messages must be variables, not f-strings in raise
+  "DTZ",   # datetime.now() must specify timezone
+  "ISC",   # implicit string concatenation
+  "RSE",   # unnecessary parentheses in raise
+  "G",     # use %s not f-strings in logging calls
+  "PGH",   # blanket type:ignore, blanket noqa, eval/exec
+  "FLY",   # convert .format() to f-strings
+  "YTT",   # sys.version comparison checks
+  "T10",   # no pdb.set_trace/breakpoint in production
+  "INP",   # require __init__.py in packages
+  "FIX",   # detect FIXME/BUG/HACK
+  "TD",    # TODO format enforcement
+  "TID",   # ban relative imports, import tidiness
+  "COM",   # trailing comma in multi-line structures
+]
+ignore = [
+  "E501",   # line length handled by formatter
+  "D100",   # module docstrings — too noisy for small modules
+  "D104",   # package docstrings (__init__.py)
+  "D107",   # __init__ docstrings
+  "TD003",  # TODO issue link — too strict for early development
+  "FIX002", # TODO allowed, only FIXME/BUG blocked
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pylint]
+max-args = 4
+max-branches = 10
+max-returns = 4
+max-statements = 50
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/coverage_ratchet.py" = [
+  "T20",     # print is the intended output mechanism for CLI scripts
+  "S603",    # subprocess calls are trusted (running pytest)
+  "S607",    # partial executable path is fine (sys.executable)
+]
+"tests/**" = [
+  "S101",    # assert is fine in tests
+  "S310",    # urlopen audit not needed in tests
+  "D",       # docstrings not required in tests
+  "ARG",     # unused arguments (fixtures)
+  "PLR2004", # magic numbers in tests
+  "FBT",     # boolean args fine in tests
+  "C90",     # complexity relaxed in tests
+  "SLF",     # private access fine in tests
+  "PT011",   # broad pytest.raises is fine in tests
+  "PT017",   # assertion in except block is fine
+  "TRY003",  # long exception messages fine in tests
+  "TRY301",  # raise within try fine in tests
+  "PERF",    # performance optimizations relaxed in tests
+  "BLE",     # blind except fine in tests
+  "EM",      # error message style relaxed in tests
+  "DTZ",     # timezone enforcement relaxed in tests
+  "T10",     # debugger breakpoints fine in tests
+  "TD",      # TODO format relaxed in tests
+  "FIX",     # FIXME/BUG markers fine in tests
+  "COM",     # trailing comma relaxed in tests
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=scripts --cov-report=term --cov-branch --cov-fail-under=95"
+
+[tool.coverage.run]
+omit = ["scripts/coverage_ratchet.py"]

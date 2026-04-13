@@ -16,7 +16,7 @@ export function PaymentReceiptEmail({
   planName,
   amount,
   date,
-}: PaymentReceiptEmailProps) {
+}: PaymentReceiptEmailProps): React.JSX.Element {
   return (
     <Html>
       <Head />

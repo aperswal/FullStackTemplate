@@ -1,3 +1,13 @@
+# ═══════════════════════════════════════════════════════════════
+# DEVELOPMENT ONLY
+#
+# This file exposes ports for local development (Postgres 5432,
+# Mailpit 8025/1025) that MUST NOT be exposed in production.
+#
+# For production, use the override:
+#   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+# ═══════════════════════════════════════════════════════════════
+
 services:
   web:
     build:
@@ -10,7 +20,7 @@ services:
       - DEPLOY_TARGET=docker
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
-      - BETTER_AUTH_SECRET=development-secret-change-me-in-production
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set in .env}
       - BETTER_AUTH_URL=http://localhost:3000
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
       - STRIPE_SECRET_KEY=sk_test_placeholder

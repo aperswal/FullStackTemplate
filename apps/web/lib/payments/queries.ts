@@ -3,9 +3,12 @@ import type { UserRole, SubscriptionStatus } from '@template/shared';
 
 import { db, type DbOrTx } from '@/lib/db';
 import { subscription } from '@/lib/db/schema/subscriptions';
-import { user } from '@/lib/db/schema/auth';
+import { user, session } from '@/lib/db/schema/auth';
 
-export async function getSubscriptionByUserId(userId: string, dbOrTx: DbOrTx = db) {
+export async function getSubscriptionByUserId(
+  userId: string,
+  dbOrTx: DbOrTx = db,
+): Promise<typeof subscription.$inferSelect | null> {
   const result = await dbOrTx.query.subscription.findFirst({
     where: eq(subscription.userId, userId),
   });
@@ -25,7 +28,7 @@ export async function upsertSubscription(
     cancelAtPeriodEnd: boolean;
   },
   dbOrTx: DbOrTx = db,
-) {
+): Promise<void> {
   await dbOrTx
     .insert(subscription)
     .values(data)
@@ -42,16 +45,23 @@ export async function upsertSubscription(
     });
 }
 
-export async function updateUserRole(userId: string, role: UserRole, dbOrTx: DbOrTx = db) {
+export async function updateUserRole(
+  userId: string,
+  role: UserRole,
+  dbOrTx: DbOrTx = db,
+): Promise<void> {
   await dbOrTx.update(user).set({ role, updatedAt: new Date() }).where(eq(user.id, userId));
+  // Invalidate all sessions to force re-authentication with new role
+  await dbOrTx.delete(session).where(eq(session.userId, userId));
 }
 
 export async function updateUserPaymentCustomerId(
   userId: string,
   paymentCustomerId: string,
   paymentProvider: string = 'stripe',
-) {
-  await db
+  dbOrTx: DbOrTx = db,
+): Promise<void> {
+  await dbOrTx
     .update(user)
     .set({ paymentCustomerId, paymentProvider, updatedAt: new Date() })
     .where(eq(user.id, userId));

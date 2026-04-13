@@ -4,8 +4,7 @@ WORKDIR /app
 
 COPY pyproject.toml ./
 
-RUN pip install --no-cache-dir -e "." && \
-    pip install --no-cache-dir -e ".[data,ai]"
+RUN pip install --no-cache-dir ".[data,ai]"
 
 COPY . .
 

@@ -1,0 +1,85 @@
+# Production overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+#
+# Changes from development:
+#   - Removes mailpit (no dev email service)
+#   - Removes postgres port exposure (internal-only)
+#   - Removes python volume mount (no live reload)
+#   - Adds network isolation (frontend/backend)
+#   - Adds health checks on worker and python services
+#   - Adds structured logging with rotation
+#   - Adds restart policies
+
+services:
+  web:
+    environment:
+      - NODE_ENV=production
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    networks:
+      - frontend
+      - backend
+
+  worker:
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/healthz']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    networks:
+      - backend
+
+  python:
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          'import urllib.request; urllib.request.urlopen("http://localhost:8000/health")',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: always
+    volumes: []
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    networks:
+      - backend
+
+  db:
+    ports: []
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    networks:
+      - backend
+
+  mailpit:
+    profiles:
+      - never
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true

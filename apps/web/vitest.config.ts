@@ -15,8 +15,24 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
-      exclude: ['node_modules', '.next', 'components/ui', '**/*.config.*', '**/*.d.ts'],
+      reporter: ['text', 'html', 'lcov', 'json-summary', 'json'],
+      exclude: [
+        'node_modules',
+        '.next',
+        'components/ui',
+        '**/*.config.*',
+        '**/*.d.ts',
+        'lib/db/schema/**',
+        'lib/db/seed.ts',
+        'lib/test-utils.ts',
+        'instrumentation.ts',
+      ],
+      thresholds: {
+        lines: 95,
+        branches: 95,
+        functions: 95,
+        statements: 95,
+      },
     },
   },
   resolve: {

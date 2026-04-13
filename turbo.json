@@ -3,17 +3,21 @@
   "globalEnv": ["DEPLOY_TARGET", "DATABASE_URL", "NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["lint", "typecheck", "^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": []
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": []
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": []
+    },
+    "test:coverage": {
+      "dependsOn": [],
+      "outputs": ["coverage/**"]
     },
     "dev": {
       "cache": false,

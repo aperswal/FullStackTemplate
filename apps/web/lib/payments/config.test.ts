@@ -16,10 +16,6 @@ describe('PLANS', () => {
     it('has role "free"', () => {
       expect(PLANS.free.role).toBe('free');
     });
-
-    it('has null externalPriceId', () => {
-      expect(PLANS.free.externalPriceId).toBe(null);
-    });
   });
 
   describe('pro plan', () => {
@@ -29,10 +25,6 @@ describe('PLANS', () => {
 
     it('has role "pro"', () => {
       expect(PLANS.pro.role).toBe('pro');
-    });
-
-    it('has an externalPriceId string', () => {
-      expect(typeof PLANS.pro.externalPriceId).toBe('string');
     });
   });
 

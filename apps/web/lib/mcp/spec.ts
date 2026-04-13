@@ -94,6 +94,16 @@ export const spec: AppSpec = {
       response: { received: 'boolean' },
     },
 
+    // ─── MCP ────────────────────────────────────────────────────
+    {
+      path: '/api/mcp',
+      method: 'POST',
+      auth: true,
+      description:
+        'Model Context Protocol server endpoint. Supports search, execute, and browse tools. Requires MCP_API_KEY Bearer token in production.',
+      headers: { authorization: 'string (Bearer <MCP_API_KEY>)' },
+    },
+
     // ─── OG Image ────────────────────────────────────────────────
     {
       path: '/api/og',

@@ -4,7 +4,8 @@
     "tryAgain": "Try again",
     "or": "or",
     "backToHome": "Back to home",
-    "backToSignIn": "Back to sign in"
+    "backToSignIn": "Back to sign in",
+    "skipToContent": "Skip to content"
   },
   "seo": {
     "siteName": "FullStack Template",
@@ -20,6 +21,7 @@
     "login": "Log in",
     "getStarted": "Get started",
     "dashboard": "Dashboard",
+    "signOut": "Sign out",
     "brandName": "Template"
   },
   "footer": {
@@ -71,7 +73,8 @@
     "perMonth": "/month",
     "getStartedFree": "Get started free",
     "subscribeTo": "Subscribe to {planName}",
-    "redirecting": "Redirecting..."
+    "redirecting": "Redirecting...",
+    "checkoutFailed": "Failed to start checkout. Please try again."
   },
   "plans": {
     "free": {
@@ -175,11 +178,13 @@
     "ariaLabel": "Cookie consent",
     "message": "We use cookies to improve your experience and analyze site usage. By accepting, you consent to analytics cookies.",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "privacyPolicy": "Privacy Policy"
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
     "unexpectedError": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try again",
     "criticalError": "A critical error occurred. Please try refreshing the page.",
     "errorId": "Error ID: {digest}",
     "pageNotFound": "Page not found",

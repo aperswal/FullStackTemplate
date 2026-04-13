@@ -7,7 +7,8 @@
     "synth": "cdk synth",
     "deploy": "cdk deploy --all",
     "diff": "cdk diff",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.200.0",
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@types/node": "^20.19.39",
     "aws-cdk": "^2.200.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }

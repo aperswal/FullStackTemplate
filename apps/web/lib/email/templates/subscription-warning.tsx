@@ -24,7 +24,7 @@ export function SubscriptionWarningEmail({
   userName,
   planName,
   billingUrl,
-}: SubscriptionWarningEmailProps) {
+}: SubscriptionWarningEmailProps): React.JSX.Element {
   return (
     <Html>
       <Head />

@@ -1,6 +1,6 @@
 /** Shared API response shapes used by both client and server. */
 
-import type { Blame } from './errors';
+import type { ErrorResponseBody } from './errors';
 
 export interface ApiResponse<T> {
   data: T;
@@ -11,14 +11,8 @@ export interface ApiResponse<T> {
   };
 }
 
-export interface ApiError {
-  error: {
-    code: string;
-    message: string;
-    blame: Blame;
-    statusCode: number;
-  };
-}
+/** @deprecated Use ErrorResponseBody from './errors' instead. */
+export type ApiError = ErrorResponseBody;
 
 export interface PaginatedResult<T> {
   items: T[];

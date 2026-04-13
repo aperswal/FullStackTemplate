@@ -9,14 +9,126 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { signIn, signUp } from '@/lib/auth/client';
+import { signUp } from '@/lib/auth/client';
+import { PASSWORD_MIN_LENGTH } from '@/lib/auth/constants';
 import { trackEvent } from '@/lib/analytics';
 import { ROUTES } from '@/lib/routes';
+import { OAuthButtons } from '@/app/(auth)/components/oauth-buttons';
 
-export default function SignupPage() {
+interface SignupFormProps {
+  name: string;
+  setName: (v: string) => void;
+  email: string;
+  setEmail: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
+  confirmPassword: string;
+  setConfirmPassword: (v: string) => void;
+  error: string;
+  loading: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+function PasswordFields({
+  password,
+  setPassword,
+  confirmPassword,
+  setConfirmPassword,
+}: Pick<SignupFormProps, 'password' | 'setPassword' | 'confirmPassword' | 'setConfirmPassword'>) {
   const t = useTranslations('auth');
-  const tc = useTranslations('common');
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="password">{t('password')}</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder={t('passwordPlaceholder')}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          placeholder={t('confirmPasswordPlaceholder')}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+        />
+      </div>
+    </>
+  );
+}
+
+function SignupForm(props: SignupFormProps) {
+  const t = useTranslations('auth');
+  return (
+    <form onSubmit={props.onSubmit} className="space-y-4">
+      {props.error !== '' && (
+        <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {props.error}
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="name">{t('name')}</Label>
+        <Input
+          id="name"
+          type="text"
+          placeholder={t('namePlaceholder')}
+          value={props.name}
+          onChange={(e) => props.setName(e.target.value)}
+          required
+          autoComplete="name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">{t('email')}</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder={t('emailPlaceholder')}
+          value={props.email}
+          onChange={(e) => props.setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+      </div>
+      <PasswordFields
+        password={props.password}
+        setPassword={props.setPassword}
+        confirmPassword={props.confirmPassword}
+        setConfirmPassword={props.setConfirmPassword}
+      />
+      <Button type="submit" className="w-full" disabled={props.loading}>
+        {props.loading ? t('creatingAccount') : t('createAccountButton')}
+      </Button>
+    </form>
+  );
+}
+
+function validateSignupForm(
+  password: string,
+  confirmPassword: string,
+  t: ReturnType<typeof useTranslations<'auth'>>,
+): string | null {
+  if (password !== confirmPassword) {
+    return t('passwordsDoNotMatch');
+  }
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return t('passwordMinLength');
+  }
+  return null;
+}
+
+function useSignupState() {
+  const t = useTranslations('auth');
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,35 +140,40 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-
-    if (password !== confirmPassword) {
-      setError(t('passwordsDoNotMatch'));
+    const validationError = validateSignupForm(password, confirmPassword, t);
+    if (validationError !== null) {
+      setError(validationError);
       return;
     }
-
-    if (password.length < 8) {
-      setError(t('passwordMinLength'));
-      return;
-    }
-
     setLoading(true);
-
     const result = await signUp.email({ email, password, name });
-
     if (result.error) {
       setError(result.error.message ?? t('signUpFailed'));
       setLoading(false);
       return;
     }
-
     trackEvent('signup_success', { method: 'email' });
-    router.push(ROUTES.dashboard);
+    router.push(ROUTES.verifyEmail);
   }
 
-  async function handleOAuth(provider: 'google' | 'github') {
-    trackEvent('auth_oauth_initiated', { provider });
-    await signIn.social({ provider, callbackURL: ROUTES.dashboard });
-  }
+  return {
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    error,
+    loading,
+    handleSubmit,
+  };
+}
+
+export default function SignupPage(): React.ReactNode {
+  const t = useTranslations('auth');
+  const state = useSignupState();
 
   return (
     <Card>
@@ -65,84 +182,20 @@ export default function SignupPage() {
         <CardDescription>{t('getStartedFree')}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="name">{t('name')}</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder={t('namePlaceholder')}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoComplete="name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">{t('email')}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={t('emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">{t('password')}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t('passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              minLength={8}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder={t('confirmPasswordPlaceholder')}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? t('creatingAccount') : t('createAccountButton')}
-          </Button>
-        </form>
-
-        <div className="my-6 flex items-center gap-4">
-          <Separator className="flex-1" />
-          <span className="text-sm text-muted-foreground">{tc('or')}</span>
-          <Separator className="flex-1" />
-        </div>
-
-        <div className="space-y-2">
-          <Button variant="outline" className="w-full" onClick={() => handleOAuth('google')}>
-            {t('continueWithGoogle')}
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => handleOAuth('github')}>
-            {t('continueWithGitHub')}
-          </Button>
-        </div>
-
+        <SignupForm
+          name={state.name}
+          setName={state.setName}
+          email={state.email}
+          setEmail={state.setEmail}
+          password={state.password}
+          setPassword={state.setPassword}
+          confirmPassword={state.confirmPassword}
+          setConfirmPassword={state.setConfirmPassword}
+          error={state.error}
+          loading={state.loading}
+          onSubmit={(e) => void state.handleSubmit(e)}
+        />
+        <OAuthButtons callbackUrl={ROUTES.dashboard} />
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t('alreadyHaveAccount')}{' '}
           <Link href={ROUTES.login} className="text-primary hover:underline">

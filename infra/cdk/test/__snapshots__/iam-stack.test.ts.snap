@@ -1,0 +1,123 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`IamStack > matches snapshot 1`] = `
+{
+  "Outputs": {
+    "TaskRoleArn": {
+      "Description": "ECS task role ARN",
+      "Value": {
+        "Fn::GetAtt": [
+          "TaskRole30FC0FBB",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "TaskRole30FC0FBB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Role assumed by ECS tasks with least-privilege app permissions",
+        "ManagedPolicyArns": [
+          {
+            "Fn::ImportValue": "TestStorageStack:ExportsOutputRefUploadBucketPolicy872B455FD924F750",
+          },
+        ],
+        "RoleName": "fullstack-template-task-role-dev",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TaskRoleDefaultPolicy07FC53DE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "TestMonitoringStack:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestMonitoringStack:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "secretsmanager:GetSecretValue",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestDatabaseStack:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TaskRoleDefaultPolicy07FC53DE",
+        "Roles": [
+          {
+            "Ref": "TaskRole30FC0FBB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

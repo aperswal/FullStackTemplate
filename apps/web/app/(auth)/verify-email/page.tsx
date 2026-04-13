@@ -10,7 +10,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { authClient } from '@/lib/auth/client';
 import { ROUTES } from '@/lib/routes';
 
-export default function VerifyEmailPage() {
+export default function VerifyEmailPage(): React.ReactNode {
   return (
     <Suspense>
       <VerifyEmailContent />
@@ -25,7 +25,7 @@ function VerifyEmailContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
-    if (!token) {
+    if (token === null || token === '') {
       setStatus('error');
       return;
     }

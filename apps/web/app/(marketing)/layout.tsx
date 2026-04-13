@@ -5,14 +5,23 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/routes';
 
-export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+async function MarketingHeader() {
   const t = await getTranslations('nav');
-  const tf = await getTranslations('footer');
+  const tc = await getTranslations('common');
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-foreground"
+      >
+        {tc('skipToContent')}
+      </a>
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+        <nav
+          aria-label="Main navigation"
+          className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4"
+        >
           <Link href={ROUTES.home} className="text-lg font-semibold">
             {t('brandName')}
           </Link>
@@ -38,19 +47,39 @@ export default async function MarketingLayout({ children }: { children: React.Re
           </div>
         </nav>
       </header>
+    </>
+  );
+}
 
-      <main className="flex-1">{children}</main>
+async function MarketingFooter() {
+  const tf = await getTranslations('footer');
 
-      <footer className="border-t">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
-          <p>{tf('copyright', { year: new Date().getFullYear() })}</p>
-          <div className="flex gap-4">
-            <Link href={ROUTES.pricing} className="hover:text-foreground">
-              {tf('pricing')}
-            </Link>
-          </div>
+  return (
+    <footer className="border-t">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
+        <p>{tf('copyright', { year: new Date().getFullYear() })}</p>
+        <div className="flex gap-4">
+          <Link href={ROUTES.pricing} className="hover:text-foreground">
+            {tf('pricing')}
+          </Link>
         </div>
-      </footer>
+      </div>
+    </footer>
+  );
+}
+
+export default function MarketingLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactNode {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <MarketingHeader />
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
+      <MarketingFooter />
     </div>
   );
 }

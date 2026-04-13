@@ -1,4 +1,10 @@
 {
-  "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-  "*.{json,md,yml,yaml,css}": ["prettier --write"]
+  "*.{ts,tsx}": ["eslint --fix --max-warnings=0 --no-warn-ignored", "prettier --write"],
+  "*.{json,md,yml,yaml,css}": ["prettier --write"],
+  "services/worker/**/*.go": [
+    "bash -c 'cd services/worker && golangci-lint run --fix ./... && $(go env GOPATH)/bin/gofumpt -w .'"
+  ],
+  "services/python/**/*.py": [
+    "bash -c 'cd services/python && .venv/bin/ruff check --fix . && .venv/bin/ruff format .'"
+  ]
 }

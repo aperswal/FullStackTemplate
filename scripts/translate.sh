@@ -92,7 +92,10 @@ else
     info "Add languages to targetLocales, e.g.: [\"es\", \"fr\", \"de\", \"ja\"]"
     exit 0
   fi
-  readarray -t TARGET_LOCALES < <(node -e "require('$CONFIG_FILE').targetLocales.forEach(l => console.log(l))")
+  TARGET_LOCALES=()
+  while IFS= read -r line; do
+    TARGET_LOCALES+=("$line")
+  done < <(node -e "require('$CONFIG_FILE').targetLocales.forEach(l => console.log(l))")
 fi
 
 # ─── Resolve API key ────────────────────────────────────────────

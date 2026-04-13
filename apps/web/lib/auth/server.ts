@@ -5,10 +5,17 @@ import { render } from '@react-email/components';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { sendEmail } from '@/lib/email';
+import { env } from '@/lib/env';
 import { VerificationEmail } from '@/lib/email/templates/verification';
 import { PasswordResetEmail } from '@/lib/email/templates/password-reset';
 
+const SESSION_CACHE_MAX_AGE_SECONDS = 300;
+
 export const auth = betterAuth({
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
+  trustHost: true,
+
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema,
@@ -39,19 +46,25 @@ export const auth = betterAuth({
   },
 
   socialProviders: {
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ...(env.GOOGLE_CLIENT_ID !== undefined &&
+    env.GOOGLE_CLIENT_ID !== '' &&
+    env.GOOGLE_CLIENT_SECRET !== undefined &&
+    env.GOOGLE_CLIENT_SECRET !== ''
       ? {
           google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
           },
         }
       : {}),
-    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+    ...(env.GITHUB_CLIENT_ID !== undefined &&
+    env.GITHUB_CLIENT_ID !== '' &&
+    env.GITHUB_CLIENT_SECRET !== undefined &&
+    env.GITHUB_CLIENT_SECRET !== ''
       ? {
           github: {
-            clientId: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            clientId: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET,
           },
         }
       : {}),
@@ -60,7 +73,7 @@ export const auth = betterAuth({
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes
+      maxAge: SESSION_CACHE_MAX_AGE_SECONDS,
     },
   },
 

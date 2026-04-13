@@ -12,6 +12,7 @@ export function createErrorResponse(error: unknown): NextResponse<ErrorResponseB
     return NextResponse.json(
       {
         error: {
+          code: error.name,
           message: error.userMessage,
           blame: error.blame,
           statusCode: error.statusCode,
@@ -24,6 +25,7 @@ export function createErrorResponse(error: unknown): NextResponse<ErrorResponseB
   return NextResponse.json(
     {
       error: {
+        code: 'INTERNAL_SERVER_ERROR',
         message: 'An unexpected error occurred. Please try again later.',
         blame: 'server' as const,
         statusCode: 500,

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 
+import { env } from '@/lib/env';
 import messages from '@/messages/en.json';
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
+const BASE_URL = env.NEXT_PUBLIC_APP_URL ?? 'https://example.com';
 
 interface PageMetadataInput {
   title: string;

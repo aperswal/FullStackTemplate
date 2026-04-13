@@ -1,0 +1,2494 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Deployment group > snapshots > ComputeStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlbDnsName": {
+      "Description": "ALB DNS name",
+      "Value": {
+        "Fn::GetAtt": [
+          "Alb16C2F182",
+          "DNSName",
+        ],
+      },
+    },
+    "ServiceArn": {
+      "Description": "ECS service ARN",
+      "Value": {
+        "Ref": "ServiceD69D759B",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "Alb16C2F182": {
+      "DependsOn": [
+        "AlbLogBucketPolicy222549B1",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true",
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "AlbLogBucketC26F4D8A",
+            },
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "alb/dev",
+          },
+        ],
+        "Name": "fullstack-template-dev",
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "AlbSecurityGroup86A59E99",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcpublicSubnet1Subnet2BB74ED74EB42ADC",
+          },
+          {
+            "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcpublicSubnet2SubnetE34B022AC8BB6627",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "AlbHttpListener00C8B33E": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbHttpListenerWebTargetGroup69202507",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "Alb16C2F182",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "AlbHttpListenerWebTargetGroup69202507": {
+      "Properties": {
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckPath": "/api/health",
+        "HealthyThresholdCount": 2,
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 3,
+        "VpcId": {
+          "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "AlbLogBucketAutoDeleteObjectsCustomResourceD831170E": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AlbLogBucketPolicy222549B1",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "AlbLogBucketC26F4D8A",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AlbLogBucketC26F4D8A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "fullstack-template-alb-logs-dev",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "ExpirationInDays": 14,
+              "Id": "expire-old-logs",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AlbLogBucketPolicy222549B1": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "AlbLogBucketC26F4D8A",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AlbLogBucketC26F4D8A",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AlbLogBucketC26F4D8A",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::127311923021:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AlbLogBucketC26F4D8A",
+                        "Arn",
+                      ],
+                    },
+                    "/alb/dev/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AlbLogBucketC26F4D8A",
+                        "Arn",
+                      ],
+                    },
+                    "/alb/dev/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AlbLogBucketC26F4D8A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "AlbSecurityGroup86A59E99": {
+      "Properties": {
+        "GroupDescription": "Security group for ALB — accepts public HTTP/HTTPS traffic",
+        "GroupName": "fullstack-template-alb-sg-dev",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTP from internet",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTPS from internet",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AppSecurityGroupC396D536": {
+      "Properties": {
+        "GroupDescription": "Security group for Fargate tasks — accepts traffic only from ALB",
+        "GroupName": "fullstack-template-app-sg-dev",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AppSecurityGroupfromfullstacktemplatecomputedevAlbSecurityGroup536BBBDD300084824890": {
+      "Properties": {
+        "Description": "HTTP from ALB only",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AppSecurityGroupC396D536",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup86A59E99",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClusterEB0386A7": {
+      "Properties": {
+        "ClusterName": "fullstack-template-dev",
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled",
+          },
+        ],
+      },
+      "Type": "AWS::ECS::Cluster",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "AlbLogBucketC26F4D8A",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DbIngressFromApp": {
+      "Properties": {
+        "Description": "PostgreSQL from app tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": "fullstack-template-database-dev:ExportsOutputFnGetAttDbSecurityGroupE9D701ADGroupId7A7C114A",
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AppSecurityGroupC396D536",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ServiceD69D759B": {
+      "DependsOn": [
+        "AlbHttpListener00C8B33E",
+        "AlbHttpListenerWebTargetGroup69202507",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "AlbHttpListenerWebTargetGroup69202507",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "AppSecurityGroupC396D536",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcprivateSubnet1SubnetCEAD37168693D373",
+              },
+              {
+                "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcprivateSubnet2Subnet2DE7549CDF5ACE3D",
+              },
+            ],
+          },
+        },
+        "ServiceName": "fullstack-template-web-dev",
+        "TaskDefinition": {
+          "Ref": "TaskDef54694570",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "ServiceTaskCountTarget23E25614": {
+      "Properties": {
+        "MaxCapacity": 3,
+        "MinCapacity": 1,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "service/",
+              {
+                "Ref": "ClusterEB0386A7",
+              },
+              "/",
+              {
+                "Fn::GetAtt": [
+                  "ServiceD69D759B",
+                  "Name",
+                ],
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::123456789012:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
+            ],
+          ],
+        },
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ServiceTaskCountTargetCpuScalingCC8A5DF6": {
+      "Properties": {
+        "PolicyName": "fullstacktemplatecomputedevServiceTaskCountTargetCpuScaling2CF6440D",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ServiceTaskCountTarget23E25614",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageCPUUtilization",
+          },
+          "ScaleInCooldown": 300,
+          "ScaleOutCooldown": 60,
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "ServiceTaskCountTargetMemoryScalingEA4B07C8": {
+      "Properties": {
+        "PolicyName": "fullstacktemplatecomputedevServiceTaskCountTargetMemoryScaling1D1160D7",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ServiceTaskCountTarget23E25614",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageMemoryUtilization",
+          },
+          "ScaleInCooldown": 300,
+          "ScaleOutCooldown": 60,
+          "TargetValue": 80,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "TaskDef54694570": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production",
+              },
+              {
+                "Name": "DEPLOY_TARGET",
+                "Value": "docker",
+              },
+              {
+                "Name": "PORT",
+                "Value": "3000",
+              },
+              {
+                "Name": "AWS_XRAY_DAEMON_ADDRESS",
+                "Value": "localhost:2000",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget -q --spider http://localhost:3000/api/health || exit 1",
+              ],
+              "Interval": 30,
+              "Retries": 3,
+              "StartPeriod": 60,
+              "Timeout": 5,
+            },
+            "Image": "node:22-alpine",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Fn::ImportValue": "fullstack-template-monitoring-dev:ExportsOutputRefAppLogGroup7D8CD9527CC48D3E",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "web",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DATABASE_URL",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "fullstack-template-database-dev:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+                      },
+                      ":connectionString::",
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            "Essential": false,
+            "Image": "amazon/aws-xray-daemon:3.3.15",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Fn::ImportValue": "fullstack-template-monitoring-dev:ExportsOutputRefAppLogGroup7D8CD9527CC48D3E",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "xray",
+              },
+            },
+            "MemoryReservation": 64,
+            "Name": "xray-daemon",
+            "PortMappings": [
+              {
+                "ContainerPort": 2000,
+                "Protocol": "udp",
+              },
+            ],
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "TaskDefExecutionRoleB4775C97",
+            "Arn",
+          ],
+        },
+        "Family": "fullstacktemplatecomputedevTaskDef0A3AC947",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::ImportValue": "fullstack-template-iam-dev:ExportsOutputFnGetAttTaskRole30FC0FBBArn85EA3C60",
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "TaskDefExecutionRoleB4775C97": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TaskDefExecutionRoleDefaultPolicy0DBB737A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "fullstack-template-monitoring-dev:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "fullstack-template-database-dev:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TaskDefExecutionRoleDefaultPolicy0DBB737A",
+        "Roles": [
+          {
+            "Ref": "TaskDefExecutionRoleB4775C97",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`Deployment group > snapshots > DatabaseStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "DbEndpoint": {
+      "Description": "RDS endpoint address",
+      "Value": {
+        "Fn::GetAtt": [
+          "DatabaseB269D8BB",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "DbSecretArn": {
+      "Description": "Secrets Manager ARN for database credentials",
+      "Value": {
+        "Ref": "DatabaseSecretAttachmentE5D1B020",
+      },
+    },
+    "ExportsOutputFnGetAttDbSecurityGroupE9D701ADGroupId7A7C114A": {
+      "Export": {
+        "Name": "fullstack-template-database-dev:ExportsOutputFnGetAttDbSecurityGroupE9D701ADGroupId7A7C114A",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "DbSecurityGroupE9D701AD",
+          "GroupId",
+        ],
+      },
+    },
+    "ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73": {
+      "Export": {
+        "Name": "fullstack-template-database-dev:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+      },
+      "Value": {
+        "Ref": "DatabaseSecretAttachmentE5D1B020",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "DatabaseB269D8BB": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "BackupRetentionPeriod": 3,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": "db.t4g.micro",
+        "DBInstanceIdentifier": "fullstack-template-db-dev",
+        "DBName": "fullstack_template",
+        "DBSubnetGroupName": {
+          "Ref": "DatabaseSubnetGroup7D60F180",
+        },
+        "DeletionProtection": false,
+        "Engine": "postgres",
+        "EngineVersion": "16",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "fullstacktemplatedatabasedevDatabaseSecretDF4E94DD3fdaad7efa858a3daf9490cf0a702aeb",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": "postgres",
+        "MaxAllocatedStorage": 100,
+        "MultiAZ": false,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp2",
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DbSecurityGroupE9D701AD",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DatabaseSecretAttachmentE5D1B020": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "fullstacktemplatedatabasedevDatabaseSecretDF4E94DD3fdaad7efa858a3daf9490cf0a702aeb",
+        },
+        "TargetId": {
+          "Ref": "DatabaseB269D8BB",
+        },
+        "TargetType": "AWS::RDS::DBInstance",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "DatabaseSubnetGroup7D60F180": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnet group for Database database",
+        "SubnetIds": [
+          {
+            "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcisolatedSubnet1SubnetE62B1B9BEE029908",
+          },
+          {
+            "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpcisolatedSubnet2Subnet392170557C27A199",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "DbSecurityGroupE9D701AD": {
+      "Properties": {
+        "GroupDescription": "Security group for RDS PostgreSQL — only accepts traffic from app services",
+        "GroupName": "fullstack-template-db-sg-dev",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "fullstack-template-networking-dev:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "fullstacktemplatedatabasedevDatabaseSecretDF4E94DD3fdaad7efa858a3daf9490cf0a702aeb": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"postgres"}",
+        },
+        "Name": "fullstack-template/dev/db-credentials",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`Deployment group > snapshots > IamStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "ExportsOutputFnGetAttTaskRole30FC0FBBArn85EA3C60": {
+      "Export": {
+        "Name": "fullstack-template-iam-dev:ExportsOutputFnGetAttTaskRole30FC0FBBArn85EA3C60",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "TaskRole30FC0FBB",
+          "Arn",
+        ],
+      },
+    },
+    "TaskRoleArn": {
+      "Description": "ECS task role ARN",
+      "Value": {
+        "Fn::GetAtt": [
+          "TaskRole30FC0FBB",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "TaskRole30FC0FBB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Role assumed by ECS tasks with least-privilege app permissions",
+        "ManagedPolicyArns": [
+          {
+            "Fn::ImportValue": "fullstack-template-storage-dev:ExportsOutputRefUploadBucketPolicy872B455FD924F750",
+          },
+        ],
+        "RoleName": "fullstack-template-task-role-dev",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TaskRoleDefaultPolicy07FC53DE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "fullstack-template-monitoring-dev:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "fullstack-template-monitoring-dev:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "secretsmanager:GetSecretValue",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "fullstack-template-database-dev:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+                "xray:GetSamplingRules",
+                "xray:GetSamplingTargets",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TaskRoleDefaultPolicy07FC53DE",
+        "Roles": [
+          {
+            "Ref": "TaskRole30FC0FBB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`Deployment group > snapshots > MonitoringStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Description": "SNS topic ARN for alarms",
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Description": "CloudWatch dashboard URL",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".console.aws.amazon.com/cloudwatch/home?region=",
+            {
+              "Ref": "AWS::Region",
+            },
+            "#dashboards:name=fullstack-template-dev",
+          ],
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94": {
+      "Export": {
+        "Name": "fullstack-template-monitoring-dev:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AppLogGroup7D8CD952",
+          "Arn",
+        ],
+      },
+    },
+    "ExportsOutputRefAppLogGroup7D8CD9527CC48D3E": {
+      "Export": {
+        "Name": "fullstack-template-monitoring-dev:ExportsOutputRefAppLogGroup7D8CD9527CC48D3E",
+      },
+      "Value": {
+        "Ref": "AppLogGroup7D8CD952",
+      },
+    },
+    "LogGroupName": {
+      "Description": "CloudWatch log group name",
+      "Value": {
+        "Ref": "AppLogGroup7D8CD952",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "4xxMetricFilter24A41DD2": {
+      "Properties": {
+        "FilterPattern": "{ ($.statusCode >= 400) && ($.statusCode < 500) }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "Http4xxCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "5xxMetricFilter4B3CBF9E": {
+      "Properties": {
+        "FilterPattern": "{ $.statusCode >= 500 }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "Http5xxCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "fullstack-template dev Alarms",
+        "TopicName": "fullstack-template-alarms-dev",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AppDashboard4E9FACF8": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"text","width":24,"height":1,"x":0,"y":0,"properties":{"markdown":"# fullstack-template — dev\\nApplication health dashboard"}},{"type":"metric","width":8,"height":6,"x":0,"y":1,"properties":{"view":"timeSeries","title":"Error & Warning Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","ErrorCount",{"color":"#d13212","label":"Errors","stat":"Sum"}],["fullstack-template/dev","WarnCount",{"color":"#ff9900","label":"Warnings","stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":1,"properties":{"view":"timeSeries","title":"HTTP Status Codes","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","Http4xxCount",{"color":"#ff9900","label":"4xx Client Errors","stat":"Sum"}],["fullstack-template/dev","Http5xxCount",{"color":"#d13212","label":"5xx Server Errors","stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":1,"properties":{"view":"timeSeries","title":"Auth Failures","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","AuthFailureCount",{"color":"#d13212","label":"Auth Failures","stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "fullstack-template-dev",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "AppLogGroup7D8CD952": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/fullstack-template/dev/app",
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AppTrail5C012BD0": {
+      "DependsOn": [
+        "AppTrailLogsRoleDefaultPolicyE0872454",
+        "AppTrailLogsRole8597C0BF",
+        "TrailBucketPolicyFEBC3C5C",
+      ],
+      "Properties": {
+        "CloudWatchLogsLogGroupArn": {
+          "Fn::GetAtt": [
+            "TrailLogGroup7A1F916A",
+            "Arn",
+          ],
+        },
+        "CloudWatchLogsRoleArn": {
+          "Fn::GetAtt": [
+            "AppTrailLogsRole8597C0BF",
+            "Arn",
+          ],
+        },
+        "EnableLogFileValidation": true,
+        "EventSelectors": [],
+        "IncludeGlobalServiceEvents": false,
+        "IsLogging": true,
+        "IsMultiRegionTrail": false,
+        "S3BucketName": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "TrailName": "fullstack-template-dev",
+      },
+      "Type": "AWS::CloudTrail::Trail",
+    },
+    "AppTrailLogsRole8597C0BF": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AppTrailLogsRoleDefaultPolicyE0872454": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutLogEvents",
+                "logs:CreateLogStream",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "TrailLogGroup7A1F916A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AppTrailLogsRoleDefaultPolicyE0872454",
+        "Roles": [
+          {
+            "Ref": "AppTrailLogsRole8597C0BF",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AuthFailureMetricFilter5299E35F": {
+      "Properties": {
+        "FilterPattern": "{ ($.context = "auth") && ($.level = "error") }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "AuthFailureCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "TrailBucketA831CE63",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ErrorMetricFilter77F7AAD4": {
+      "Properties": {
+        "FilterPattern": "{ $.level = "error" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "ErrorCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "ErrorRateAlarm1E0D8C38": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "High error rate detected in dev environment",
+        "AlarmName": "fullstack-template-dev-error-rate",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": 2,
+        "MetricName": "ErrorCount",
+        "Namespace": "fullstack-template/dev",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "LatencyMetricFilterBC11CE00": {
+      "Properties": {
+        "FilterPattern": "{ $.responseTime = "*" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "ResponseTimeMs",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "$.responseTime",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "TrailBucketA831CE63": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "fullstack-template-trail-dev",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "ExpirationInDays": 30,
+              "Id": "expire-old-trail-logs",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TrailBucketAutoDeleteObjectsCustomResource8D1A7617": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "TrailBucketPolicyFEBC3C5C",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TrailBucketPolicyFEBC3C5C": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "TrailBucketA831CE63",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "TrailBucketA831CE63",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "TrailBucketA831CE63",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "TrailBucketA831CE63",
+                        "Arn",
+                      ],
+                    },
+                    "/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "TrailLogGroup7A1F916A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/fullstack-template/dev/cloudtrail",
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WarnMetricFilter97A7617A": {
+      "Properties": {
+        "FilterPattern": "{ $.level = "warn" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "WarnCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`Deployment group > snapshots > NetworkingStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "ExportsOutputRefVpc8378EB38272D6E3A": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpc8378EB38272D6E3A",
+      },
+      "Value": {
+        "Ref": "Vpc8378EB38",
+      },
+    },
+    "ExportsOutputRefVpcisolatedSubnet1SubnetE62B1B9BEE029908": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcisolatedSubnet1SubnetE62B1B9BEE029908",
+      },
+      "Value": {
+        "Ref": "VpcisolatedSubnet1SubnetE62B1B9B",
+      },
+    },
+    "ExportsOutputRefVpcisolatedSubnet2Subnet392170557C27A199": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcisolatedSubnet2Subnet392170557C27A199",
+      },
+      "Value": {
+        "Ref": "VpcisolatedSubnet2Subnet39217055",
+      },
+    },
+    "ExportsOutputRefVpcprivateSubnet1SubnetCEAD37168693D373": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcprivateSubnet1SubnetCEAD37168693D373",
+      },
+      "Value": {
+        "Ref": "VpcprivateSubnet1SubnetCEAD3716",
+      },
+    },
+    "ExportsOutputRefVpcprivateSubnet2Subnet2DE7549CDF5ACE3D": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcprivateSubnet2Subnet2DE7549CDF5ACE3D",
+      },
+      "Value": {
+        "Ref": "VpcprivateSubnet2Subnet2DE7549C",
+      },
+    },
+    "ExportsOutputRefVpcpublicSubnet1Subnet2BB74ED74EB42ADC": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcpublicSubnet1Subnet2BB74ED74EB42ADC",
+      },
+      "Value": {
+        "Ref": "VpcpublicSubnet1Subnet2BB74ED7",
+      },
+    },
+    "ExportsOutputRefVpcpublicSubnet2SubnetE34B022AC8BB6627": {
+      "Export": {
+        "Name": "fullstack-template-networking-dev:ExportsOutputRefVpcpublicSubnet2SubnetE34B022AC8BB6627",
+      },
+      "Value": {
+        "Ref": "VpcpublicSubnet2SubnetE34B022A",
+      },
+    },
+    "VpcId": {
+      "Description": "VPC ID",
+      "Value": {
+        "Ref": "Vpc8378EB38",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "Vpc8378EB38": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-vpc-dev",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "VpcIGWD7BA715C": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-vpc-dev",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "VpcVPCGWBF912B6E": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "VpcisolatedSubnet1RouteTableAssociationD259E31A": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcisolatedSubnet1RouteTableE442650B",
+        },
+        "SubnetId": {
+          "Ref": "VpcisolatedSubnet1SubnetE62B1B9B",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcisolatedSubnet1RouteTableE442650B": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcisolatedSubnet1SubnetE62B1B9B": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.4.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcisolatedSubnet2RouteTable334F9764": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcisolatedSubnet2RouteTableAssociation25A4716F": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcisolatedSubnet2RouteTable334F9764",
+        },
+        "SubnetId": {
+          "Ref": "VpcisolatedSubnet2Subnet39217055",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcisolatedSubnet2Subnet39217055": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.5.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcprivateSubnet1DefaultRouteB506891A": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "VpcpublicSubnet1NATGatewayA036E8A6",
+        },
+        "RouteTableId": {
+          "Ref": "VpcprivateSubnet1RouteTable1979EACB",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcprivateSubnet1RouteTable1979EACB": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcprivateSubnet1RouteTableAssociationEEBD93CE": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcprivateSubnet1RouteTable1979EACB",
+        },
+        "SubnetId": {
+          "Ref": "VpcprivateSubnet1SubnetCEAD3716",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcprivateSubnet1SubnetCEAD3716": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcprivateSubnet2DefaultRouteBAC3C1C3": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "VpcpublicSubnet1NATGatewayA036E8A6",
+        },
+        "RouteTableId": {
+          "Ref": "VpcprivateSubnet2RouteTable4D0FFC8C",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcprivateSubnet2RouteTable4D0FFC8C": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcprivateSubnet2RouteTableAssociationB691E645": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcprivateSubnet2RouteTable4D0FFC8C",
+        },
+        "SubnetId": {
+          "Ref": "VpcprivateSubnet2Subnet2DE7549C",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcprivateSubnet2Subnet2DE7549C": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcpublicSubnet1DefaultRouteB88F9E93": {
+      "DependsOn": [
+        "VpcVPCGWBF912B6E",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "RouteTableId": {
+          "Ref": "VpcpublicSubnet1RouteTable15C15F8E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcpublicSubnet1EIP411541E6": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "VpcpublicSubnet1NATGatewayA036E8A6": {
+      "DependsOn": [
+        "VpcpublicSubnet1DefaultRouteB88F9E93",
+        "VpcpublicSubnet1RouteTableAssociation4E83B6E4",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "VpcpublicSubnet1EIP411541E6",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "VpcpublicSubnet1Subnet2BB74ED7",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "VpcpublicSubnet1RouteTable15C15F8E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcpublicSubnet1RouteTableAssociation4E83B6E4": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcpublicSubnet1RouteTable15C15F8E",
+        },
+        "SubnetId": {
+          "Ref": "VpcpublicSubnet1Subnet2BB74ED7",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcpublicSubnet1Subnet2BB74ED7": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcpublicSubnet2DefaultRoute732F0BEB": {
+      "DependsOn": [
+        "VpcVPCGWBF912B6E",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "RouteTableId": {
+          "Ref": "VpcpublicSubnet2RouteTableC5A6DF77",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcpublicSubnet2RouteTableAssociationCCE257FF": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcpublicSubnet2RouteTableC5A6DF77",
+        },
+        "SubnetId": {
+          "Ref": "VpcpublicSubnet2SubnetE34B022A",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcpublicSubnet2RouteTableC5A6DF77": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcpublicSubnet2SubnetE34B022A": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "fullstack-template-networking-dev/Vpc/publicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`Deployment group > snapshots > StorageStack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "ExportsOutputRefUploadBucketPolicy872B455FD924F750": {
+      "Export": {
+        "Name": "fullstack-template-storage-dev:ExportsOutputRefUploadBucketPolicy872B455FD924F750",
+      },
+      "Value": {
+        "Ref": "UploadBucketPolicy872B455F",
+      },
+    },
+    "UploadBucketArn": {
+      "Description": "ARN of the S3 upload bucket",
+      "Value": {
+        "Fn::GetAtt": [
+          "UploadBucketD2C1DA78",
+          "Arn",
+        ],
+      },
+    },
+    "UploadBucketName": {
+      "Description": "Name of the S3 upload bucket",
+      "Value": {
+        "Ref": "UploadBucketD2C1DA78",
+      },
+    },
+    "UploadPolicyArn": {
+      "Description": "ARN of the upload access managed policy",
+      "Value": {
+        "Ref": "UploadBucketPolicy872B455F",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "UploadBucketD2C1DA78",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "UploadBucketAutoDeleteObjectsCustomResource36B44E3D": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "UploadBucketPolicy180778F4",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "UploadBucketD2C1DA78",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UploadBucketD2C1DA78": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "fullstack-template-uploads-dev",
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "*",
+              ],
+              "AllowedMethods": [
+                "GET",
+                "PUT",
+                "POST",
+              ],
+              "AllowedOrigins": [
+                "https://localhost:3000",
+              ],
+              "MaxAge": 3600,
+            },
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "cleanup-incomplete-uploads",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UploadBucketPolicy180778F4": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "UploadBucketD2C1DA78",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UploadBucketD2C1DA78",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadBucketD2C1DA78",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "UploadBucketPolicy872B455F": {
+      "Properties": {
+        "Description": "",
+        "ManagedPolicyName": "fullstack-template-upload-access-dev",
+        "Path": "/",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UploadBucketD2C1DA78",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadBucketD2C1DA78",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::ManagedPolicy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

@@ -15,8 +15,8 @@ env:
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
-  ci:
-    name: Lint, Typecheck, Test, Build
+  verify:
+    name: Full Stack Verify
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +31,17 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: services/worker/go.sum
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Setup pnpm store cache
         uses: actions/cache@v4
@@ -48,39 +59,66 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: pip install -e "./services/python[dev]"
+
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
+
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@latest
+
+      - name: Full stack verify
+        run: pnpm verify
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: apps/web/coverage/
+          retention-days: 30
+
+      - name: Update coverage baseline (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          npx tsx scripts/coverage-ratchet.ts --update
+          cd services/worker && ./scripts/coverage-ratchet.sh --update && cd ../..
+          cd services/python && .venv/bin/python3 scripts/coverage_ratchet.py --update && cd ../..
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .coverage-baseline.json services/worker/.coverage-baseline.json services/python/.coverage-baseline.json
+          git diff --cached --quiet || git commit -m "chore: update coverage baseline [skip ci]"
+          git push
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: verify
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Unit tests
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache-dependency-path: services/worker/go.sum
-
-      - name: Go build
-        run: cd services/worker && go build ./...
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Python lint and test
-        run: |
-          cd services/python
-          pip install ruff
-          ruff check .
-          pip install -e ".[dev]"
-          pytest
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          SKIP_ENV_VALIDATION: '1'

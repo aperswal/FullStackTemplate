@@ -11,7 +11,7 @@ interface ProvidersProps {
   posthogHost?: string;
 }
 
-export function Providers({ children, posthogKey, posthogHost }: ProvidersProps) {
+export function Providers({ children, posthogKey, posthogHost }: ProvidersProps): ReactNode {
   return (
     <QueryProvider>
       <Suspense fallback={null}>

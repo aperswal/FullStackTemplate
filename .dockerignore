@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+dist
+coverage
+e2e
+infra
+*.md
+.env*
+.husky
+.github

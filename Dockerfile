@@ -42,6 +42,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
+COPY --from=build /app/apps/web/lib/db/migrations ./apps/web/lib/db/migrations
+COPY --from=build /app/apps/web/scripts/migrate.cjs ./apps/web/scripts/migrate.cjs
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh

@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["bin/**/*.ts", "lib/**/*.ts", "config.ts"],
+  "include": ["bin/**/*.ts", "lib/**/*.ts", "test/**/*.ts", "config.ts"],
   "exclude": ["node_modules", "dist"]
 }

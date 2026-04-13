@@ -10,6 +10,7 @@ interface StorageStackProps extends cdk.StackProps {
 
 export class StorageStack extends cdk.Stack {
   public readonly uploadBucket: s3.Bucket;
+  public readonly uploadPolicy: iam.ManagedPolicy;
 
   constructor(scope: Construct, id: string, props: StorageStackProps) {
     super(scope, id, props);
@@ -33,14 +34,14 @@ export class StorageStack extends cdk.Stack {
       cors: [
         {
           allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT, s3.HttpMethods.POST],
-          allowedOrigins: ['*'],
+          allowedOrigins: [config.appUrl],
           allowedHeaders: ['*'],
           maxAge: 3600,
         },
       ],
     });
 
-    const uploadPolicy = new iam.ManagedPolicy(this, 'UploadBucketPolicy', {
+    this.uploadPolicy = new iam.ManagedPolicy(this, 'UploadBucketPolicy', {
       managedPolicyName: `${config.appName}-upload-access-${config.stageName}`,
       statements: [
         new iam.PolicyStatement({
@@ -62,7 +63,7 @@ export class StorageStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'UploadPolicyArn', {
-      value: uploadPolicy.managedPolicyArn,
+      value: this.uploadPolicy.managedPolicyArn,
       description: 'ARN of the upload access managed policy',
     });
   }

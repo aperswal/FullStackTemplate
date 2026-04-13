@@ -1,0 +1,529 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MonitoringStack > matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Description": "SNS topic ARN for alarms",
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Description": "CloudWatch dashboard URL",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".console.aws.amazon.com/cloudwatch/home?region=",
+            {
+              "Ref": "AWS::Region",
+            },
+            "#dashboards:name=fullstack-template-dev",
+          ],
+        ],
+      },
+    },
+    "LogGroupName": {
+      "Description": "CloudWatch log group name",
+      "Value": {
+        "Ref": "AppLogGroup7D8CD952",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "4xxMetricFilter24A41DD2": {
+      "Properties": {
+        "FilterPattern": "{ ($.statusCode >= 400) && ($.statusCode < 500) }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "Http4xxCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "5xxMetricFilter4B3CBF9E": {
+      "Properties": {
+        "FilterPattern": "{ $.statusCode >= 500 }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "Http5xxCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "fullstack-template dev Alarms",
+        "TopicName": "fullstack-template-alarms-dev",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AppDashboard4E9FACF8": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"text","width":24,"height":1,"x":0,"y":0,"properties":{"markdown":"# fullstack-template — dev\\nApplication health dashboard"}},{"type":"metric","width":8,"height":6,"x":0,"y":1,"properties":{"view":"timeSeries","title":"Error & Warning Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","ErrorCount",{"color":"#d13212","label":"Errors","stat":"Sum"}],["fullstack-template/dev","WarnCount",{"color":"#ff9900","label":"Warnings","stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":1,"properties":{"view":"timeSeries","title":"HTTP Status Codes","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","Http4xxCount",{"color":"#ff9900","label":"4xx Client Errors","stat":"Sum"}],["fullstack-template/dev","Http5xxCount",{"color":"#d13212","label":"5xx Server Errors","stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":1,"properties":{"view":"timeSeries","title":"Auth Failures","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["fullstack-template/dev","AuthFailureCount",{"color":"#d13212","label":"Auth Failures","stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "fullstack-template-dev",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "AppLogGroup7D8CD952": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/fullstack-template/dev/app",
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AppTrail5C012BD0": {
+      "DependsOn": [
+        "AppTrailLogsRoleDefaultPolicyE0872454",
+        "AppTrailLogsRole8597C0BF",
+        "TrailBucketPolicyFEBC3C5C",
+      ],
+      "Properties": {
+        "CloudWatchLogsLogGroupArn": {
+          "Fn::GetAtt": [
+            "TrailLogGroup7A1F916A",
+            "Arn",
+          ],
+        },
+        "CloudWatchLogsRoleArn": {
+          "Fn::GetAtt": [
+            "AppTrailLogsRole8597C0BF",
+            "Arn",
+          ],
+        },
+        "EnableLogFileValidation": true,
+        "EventSelectors": [],
+        "IncludeGlobalServiceEvents": false,
+        "IsLogging": true,
+        "IsMultiRegionTrail": false,
+        "S3BucketName": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "TrailName": "fullstack-template-dev",
+      },
+      "Type": "AWS::CloudTrail::Trail",
+    },
+    "AppTrailLogsRole8597C0BF": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AppTrailLogsRoleDefaultPolicyE0872454": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutLogEvents",
+                "logs:CreateLogStream",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "TrailLogGroup7A1F916A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AppTrailLogsRoleDefaultPolicyE0872454",
+        "Roles": [
+          {
+            "Ref": "AppTrailLogsRole8597C0BF",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AuthFailureMetricFilter5299E35F": {
+      "Properties": {
+        "FilterPattern": "{ ($.context = "auth") && ($.level = "error") }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "AuthFailureCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "TrailBucketA831CE63",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ErrorMetricFilter77F7AAD4": {
+      "Properties": {
+        "FilterPattern": "{ $.level = "error" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "ErrorCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "ErrorRateAlarm1E0D8C38": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "High error rate detected in dev environment",
+        "AlarmName": "fullstack-template-dev-error-rate",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": 2,
+        "MetricName": "ErrorCount",
+        "Namespace": "fullstack-template/dev",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "LatencyMetricFilterBC11CE00": {
+      "Properties": {
+        "FilterPattern": "{ $.responseTime = "*" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "ResponseTimeMs",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "$.responseTime",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+    "TrailBucketA831CE63": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "fullstack-template-trail-dev",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "ExpirationInDays": 30,
+              "Id": "expire-old-trail-logs",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TrailBucketAutoDeleteObjectsCustomResource8D1A7617": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "TrailBucketPolicyFEBC3C5C",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TrailBucketPolicyFEBC3C5C": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "TrailBucketA831CE63",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "TrailBucketA831CE63",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "TrailBucketA831CE63",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "TrailBucketA831CE63",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "TrailBucketA831CE63",
+                        "Arn",
+                      ],
+                    },
+                    "/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "TrailLogGroup7A1F916A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/fullstack-template/dev/cloudtrail",
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WarnMetricFilter97A7617A": {
+      "Properties": {
+        "FilterPattern": "{ $.level = "warn" }",
+        "LogGroupName": {
+          "Ref": "AppLogGroup7D8CD952",
+        },
+        "MetricTransformations": [
+          {
+            "DefaultValue": 0,
+            "MetricName": "WarnCount",
+            "MetricNamespace": "fullstack-template/dev",
+            "MetricValue": "1",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::MetricFilter",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

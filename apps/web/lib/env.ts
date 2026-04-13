@@ -20,15 +20,17 @@ export const env = createEnv({
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
 
-    // Payments (Stripe)
-    STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
-    STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
+    // Payments (Stripe — optional, disabled if not set)
+    STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
     STRIPE_PRO_PRICE_ID: z.string().optional(),
 
     // Email
     RESEND_API_KEY: z.string().optional(),
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASSWORD: z.string().optional(),
     EMAIL_FROM: z.string().email().default('noreply@example.com'),
 
     // AI APIs (optional)
@@ -51,8 +53,18 @@ export const env = createEnv({
     // Google Search Console
     GOOGLE_SITE_VERIFICATION: z.string().optional(),
 
+    // Logging
+    LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional(),
+
     // MCP (optional — secures the /api/mcp endpoint in production)
     MCP_API_KEY: z.string().min(32).optional(),
+
+    // Rate limiting (Upstash — optional, falls back to in-memory for Docker)
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
+    // OpenTelemetry (optional — traces exported to this endpoint)
+    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   },
 
   // ─── Client-side variables (NEXT_PUBLIC_*) ───────────────────
@@ -80,6 +92,8 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     SMTP_HOST: process.env.SMTP_HOST,
     SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     EMAIL_FROM: process.env.EMAIL_FROM,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
@@ -91,7 +105,11 @@ export const env = createEnv({
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
+    LOG_LEVEL: process.env.LOG_LEVEL,
     MCP_API_KEY: process.env.MCP_API_KEY,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
@@ -99,7 +117,7 @@ export const env = createEnv({
   },
 
   // Skip validation in Docker build stage (env vars not available yet)
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
 
   emptyStringAsUndefined: true,
 });

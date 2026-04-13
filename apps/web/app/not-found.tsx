@@ -7,7 +7,7 @@ import messages from '@/messages/en.json';
 const t = messages.errors;
 const tc = messages.common;
 
-export default function NotFound() {
+export default function NotFound(): React.ReactNode {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex flex-col items-center gap-2">

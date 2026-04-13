@@ -7,10 +7,12 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
     "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo typecheck",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm --filter @template/web validate:mcp && pnpm build && cd services/worker && make verify && cd ../../services/python && make verify && cd ../../infra/cdk && npx tsc --noEmit && npx vitest run && cd ../.. && pnpm format:check",
     "clean": "turbo clean",
     "translate": "./scripts/translate.sh",
     "prepare": "husky"

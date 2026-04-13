@@ -19,7 +19,10 @@ interface PasswordResetEmailProps {
   userName: string;
 }
 
-export function PasswordResetEmail({ resetUrl, userName }: PasswordResetEmailProps) {
+export function PasswordResetEmail({
+  resetUrl,
+  userName,
+}: PasswordResetEmailProps): React.JSX.Element {
   return (
     <Html>
       <Head />

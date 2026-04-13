@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, pgEnum, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, pgEnum, unique, index } from 'drizzle-orm/pg-core';
 import { SUBSCRIPTION_STATUSES } from '@template/shared';
 
 import { user } from './auth';
@@ -25,5 +25,8 @@ export const subscription = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [unique('subscription_user_provider_unique').on(table.userId, table.provider)],
+  (table) => [
+    unique('subscription_user_provider_unique').on(table.userId, table.provider),
+    index('subscription_user_id_idx').on(table.userId),
+  ],
 );

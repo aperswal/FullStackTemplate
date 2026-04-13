@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     if: vars.DEPLOY_TARGET == 'vercel'
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,12 +48,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: CDK deploy
-        run: pnpm --filter @template/cdk deploy --require-approval never
+      - name: Deploy to Vercel
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: CDK deploy
+        run: pnpm --filter @template/cdk deploy --all --require-approval never
 
       - name: Smoke test
         run: |
@@ -63,6 +75,7 @@ jobs:
     if: vars.DEPLOY_TARGET == 'docker'
 
     permissions:
+      id-token: write
       contents: read
       packages: write
 
@@ -111,12 +124,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: CDK deploy
-        run: pnpm --filter @template/cdk deploy --require-approval never
+        run: pnpm --filter @template/cdk deploy --all --require-approval never
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
           DOCKER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
 
       - name: Smoke test

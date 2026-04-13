@@ -1,0 +1,779 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ComputeStack > matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlbDnsName": {
+      "Description": "ALB DNS name",
+      "Value": {
+        "Fn::GetAtt": [
+          "Alb16C2F182",
+          "DNSName",
+        ],
+      },
+    },
+    "ServiceArn": {
+      "Description": "ECS service ARN",
+      "Value": {
+        "Ref": "ServiceD69D759B",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "Alb16C2F182": {
+      "DependsOn": [
+        "AlbLogBucketPolicy222549B1",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true",
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "AlbLogBucketC26F4D8A",
+            },
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "alb/dev",
+          },
+        ],
+        "Name": "fullstack-template-dev",
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "AlbSecurityGroup86A59E99",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpcpublicSubnet1Subnet2BB74ED74EB42ADC",
+          },
+          {
+            "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpcpublicSubnet2SubnetE34B022AC8BB6627",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "AlbHttpListener00C8B33E": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbHttpListenerWebTargetGroup69202507",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "Alb16C2F182",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "AlbHttpListenerWebTargetGroup69202507": {
+      "Properties": {
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckPath": "/api/health",
+        "HealthyThresholdCount": 2,
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 3,
+        "VpcId": {
+          "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "AlbLogBucketAutoDeleteObjectsCustomResourceD831170E": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AlbLogBucketPolicy222549B1",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "AlbLogBucketC26F4D8A",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AlbLogBucketC26F4D8A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "fullstack-template-alb-logs-dev",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "ExpirationInDays": 14,
+              "Id": "expire-old-logs",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AlbLogBucketPolicy222549B1": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "AlbLogBucketC26F4D8A",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AlbLogBucketC26F4D8A",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AlbLogBucketC26F4D8A",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::127311923021:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AlbLogBucketC26F4D8A",
+                        "Arn",
+                      ],
+                    },
+                    "/alb/dev/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AlbLogBucketC26F4D8A",
+                        "Arn",
+                      ],
+                    },
+                    "/alb/dev/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AlbLogBucketC26F4D8A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "AlbSecurityGroup86A59E99": {
+      "Properties": {
+        "GroupDescription": "Security group for ALB — accepts public HTTP/HTTPS traffic",
+        "GroupName": "fullstack-template-alb-sg-dev",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTP from internet",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTPS from internet",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AppSecurityGroupC396D536": {
+      "Properties": {
+        "GroupDescription": "Security group for Fargate tasks — accepts traffic only from ALB",
+        "GroupName": "fullstack-template-app-sg-dev",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AppSecurityGroupfromTestComputeStackAlbSecurityGroup90AC128A30004C48F276": {
+      "Properties": {
+        "Description": "HTTP from ALB only",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AppSecurityGroupC396D536",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup86A59E99",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClusterEB0386A7": {
+      "Properties": {
+        "ClusterName": "fullstack-template-dev",
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled",
+          },
+        ],
+      },
+      "Type": "AWS::ECS::Cluster",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "AlbLogBucketC26F4D8A",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DbIngressFromApp": {
+      "Properties": {
+        "Description": "PostgreSQL from app tasks",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": "TestDatabaseStack:ExportsOutputFnGetAttDbSecurityGroupE9D701ADGroupId7A7C114A",
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AppSecurityGroupC396D536",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ServiceD69D759B": {
+      "DependsOn": [
+        "AlbHttpListener00C8B33E",
+        "AlbHttpListenerWebTargetGroup69202507",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "web",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "AlbHttpListenerWebTargetGroup69202507",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "AppSecurityGroupC396D536",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpcprivateSubnet1SubnetCEAD37168693D373",
+              },
+              {
+                "Fn::ImportValue": "TestNetworkingStack:ExportsOutputRefVpcprivateSubnet2Subnet2DE7549CDF5ACE3D",
+              },
+            ],
+          },
+        },
+        "ServiceName": "fullstack-template-web-dev",
+        "TaskDefinition": {
+          "Ref": "TaskDef54694570",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "ServiceTaskCountTarget23E25614": {
+      "Properties": {
+        "MaxCapacity": 3,
+        "MinCapacity": 1,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "service/",
+              {
+                "Ref": "ClusterEB0386A7",
+              },
+              "/",
+              {
+                "Fn::GetAtt": [
+                  "ServiceD69D759B",
+                  "Name",
+                ],
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::123456789012:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
+            ],
+          ],
+        },
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ServiceTaskCountTargetCpuScalingCC8A5DF6": {
+      "Properties": {
+        "PolicyName": "TestComputeStackServiceTaskCountTargetCpuScaling12CF5BB3",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ServiceTaskCountTarget23E25614",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageCPUUtilization",
+          },
+          "ScaleInCooldown": 300,
+          "ScaleOutCooldown": 60,
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "ServiceTaskCountTargetMemoryScalingEA4B07C8": {
+      "Properties": {
+        "PolicyName": "TestComputeStackServiceTaskCountTargetMemoryScaling50F00711",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ServiceTaskCountTarget23E25614",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageMemoryUtilization",
+          },
+          "ScaleInCooldown": 300,
+          "ScaleOutCooldown": 60,
+          "TargetValue": 80,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "TaskDef54694570": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production",
+              },
+              {
+                "Name": "DEPLOY_TARGET",
+                "Value": "docker",
+              },
+              {
+                "Name": "PORT",
+                "Value": "3000",
+              },
+              {
+                "Name": "AWS_XRAY_DAEMON_ADDRESS",
+                "Value": "localhost:2000",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget -q --spider http://localhost:3000/api/health || exit 1",
+              ],
+              "Interval": 30,
+              "Retries": 3,
+              "StartPeriod": 60,
+              "Timeout": 5,
+            },
+            "Image": "node:22-alpine",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Fn::ImportValue": "TestMonitoringStack:ExportsOutputRefAppLogGroup7D8CD9527CC48D3E",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "web",
+              },
+            },
+            "Name": "web",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DATABASE_URL",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "TestDatabaseStack:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+                      },
+                      ":connectionString::",
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            "Essential": false,
+            "Image": "amazon/aws-xray-daemon:3.3.15",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Fn::ImportValue": "TestMonitoringStack:ExportsOutputRefAppLogGroup7D8CD9527CC48D3E",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "xray",
+              },
+            },
+            "MemoryReservation": 64,
+            "Name": "xray-daemon",
+            "PortMappings": [
+              {
+                "ContainerPort": 2000,
+                "Protocol": "udp",
+              },
+            ],
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "TaskDefExecutionRoleB4775C97",
+            "Arn",
+          ],
+        },
+        "Family": "TestComputeStackTaskDef91197CFC",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::ImportValue": "TestIamStack:ExportsOutputFnGetAttTaskRole30FC0FBBArn85EA3C60",
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "TaskDefExecutionRoleB4775C97": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TaskDefExecutionRoleDefaultPolicy0DBB737A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestMonitoringStack:ExportsOutputFnGetAttAppLogGroup7D8CD952Arn3582BE94",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestDatabaseStack:ExportsOutputRefDatabaseSecretAttachmentE5D1B020633AEB73",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TaskDefExecutionRoleDefaultPolicy0DBB737A",
+        "Roles": [
+          {
+            "Ref": "TaskDefExecutionRoleB4775C97",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

@@ -1,10 +1,71 @@
 import { runInNewContext } from 'node:vm';
 
+import { ClientError } from '@/lib/errors';
+
 import type { AppSpec } from './types';
 
 export interface CallerAuth {
   cookies?: string;
   authorization?: string;
+}
+
+const SEARCH_TIMEOUT_MS = 5_000;
+const EXECUTE_TIMEOUT_MS = 10_000;
+const JSON_INDENT_SPACES = 2;
+const BROWSE_CONTENT_MAX_LENGTH = 4000;
+
+function applyAuthHeaders(headers: Record<string, string>, auth: CallerAuth): void {
+  if (auth.cookies !== undefined && auth.cookies !== '') {
+    headers['cookie'] = auth.cookies;
+  }
+  if (auth.authorization !== undefined && auth.authorization !== '') {
+    headers['authorization'] = auth.authorization;
+  }
+}
+
+function extractTitle(html: string): string {
+  const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return match ? match[1].trim() : '';
+}
+
+function extractHeadings(html: string): string[] {
+  const headings: string[] = [];
+  const regex = /<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    headings.push(stripHtml(match[1]));
+  }
+  return headings;
+}
+
+function extractLinks(html: string): string[] {
+  const links: string[] = [];
+  const regex = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const href = match[1];
+    const text = stripHtml(match[2]);
+    if (
+      href !== undefined &&
+      href !== '' &&
+      !href.startsWith('#') &&
+      !href.startsWith('javascript:')
+    ) {
+      links.push(`${text} → ${href}`);
+    }
+  }
+  return links;
+}
+
+function extractContent(html: string): string {
+  return stripHtml(
+    html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, ''),
+  ).slice(0, BROWSE_CONTENT_MAX_LENGTH);
 }
 
 export async function runSearch(code: string, appSpec: AppSpec): Promise<string> {
@@ -27,65 +88,47 @@ export async function runSearch(code: string, appSpec: AppSpec): Promise<string>
   };
 
   const result = await runInNewContext(wrappedCode, context, {
-    timeout: 5_000,
+    timeout: SEARCH_TIMEOUT_MS,
     displayErrors: true,
   });
 
-  return JSON.stringify(result, null, 2);
+  return JSON.stringify(result, null, JSON_INDENT_SPACES);
 }
 
-export async function runExecute(
-  code: string,
-  baseUrl: string,
-  callerAuth: CallerAuth,
-): Promise<{ result: string; logs: string[] }> {
-  const logs: string[] = [];
-  const wrappedCode = `(${code})()`;
+interface SandboxRequestOptions {
+  method?: string;
+  path: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+function createSandboxedRequest(baseUrl: string, callerAuth: CallerAuth) {
   const allowedOrigin = new URL(baseUrl).origin;
 
-  const requestFn = async (opts: {
-    method?: string;
-    path: string;
-    body?: unknown;
-    headers?: Record<string, string>;
-  }) => {
+  return async (opts: SandboxRequestOptions) => {
     const url = new URL(opts.path, baseUrl);
 
     if (url.origin !== allowedOrigin) {
-      throw new Error(`Requests must target ${allowedOrigin}. Got: ${url.origin}`);
+      throw new ClientError(`Requests must target ${allowedOrigin}. Got: ${url.origin}`);
     }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...opts.headers,
     };
+    applyAuthHeaders(headers, callerAuth);
 
-    // Forward the MCP caller's auth context so the app enforces its own access control
-    if (callerAuth.cookies) {
-      headers['cookie'] = callerAuth.cookies;
-    }
-    if (callerAuth.authorization) {
-      headers['authorization'] = callerAuth.authorization;
-    }
-
-    const fetchOpts: RequestInit = {
-      method: opts.method ?? 'GET',
-      headers,
-    };
-
-    if (opts.body && fetchOpts.method !== 'GET') {
+    const fetchOpts: RequestInit = { method: opts.method ?? 'GET', headers };
+    if (opts.body !== undefined && opts.body !== null && fetchOpts.method !== 'GET') {
       fetchOpts.body = JSON.stringify(opts.body);
     }
 
     const response = await fetch(url.toString(), fetchOpts);
     const contentType = response.headers.get('content-type') ?? '';
 
-    let data: unknown;
-    if (contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
+    const data = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
 
     return {
       status: response.status,
@@ -94,8 +137,13 @@ export async function runExecute(
       data,
     };
   };
+}
 
-  const context = {
+function createSandboxContext(
+  requestFn: ReturnType<typeof createSandboxedRequest>,
+  logs: string[],
+) {
+  return {
     request: requestFn,
     JSON,
     Array,
@@ -116,14 +164,26 @@ export async function runExecute(
       error: (...args: unknown[]) => logs.push(`[error] ${args.map(String).join(' ')}`),
     },
   };
+}
+
+export async function runExecute(
+  code: string,
+  baseUrl: string,
+  callerAuth: CallerAuth,
+): Promise<{ result: string; logs: string[] }> {
+  const logs: string[] = [];
+  const wrappedCode = `(${code})()`;
+
+  const requestFn = createSandboxedRequest(baseUrl, callerAuth);
+  const context = createSandboxContext(requestFn, logs);
 
   const result = await runInNewContext(wrappedCode, context, {
-    timeout: 10_000,
+    timeout: EXECUTE_TIMEOUT_MS,
     displayErrors: true,
   });
 
   return {
-    result: JSON.stringify(result, null, 2),
+    result: JSON.stringify(result, null, JSON_INDENT_SPACES),
     logs,
   };
 }
@@ -136,51 +196,21 @@ export async function runBrowse(
   const url = new URL(path, baseUrl);
 
   if (url.origin !== new URL(baseUrl).origin) {
-    throw new Error(`Browse must target ${baseUrl}. Got: ${url.origin}`);
+    throw new ClientError(`Browse must target ${baseUrl}. Got: ${url.origin}`);
   }
 
   const headers: Record<string, string> = { Accept: 'text/html' };
-  if (callerAuth.cookies) {
-    headers['cookie'] = callerAuth.cookies;
-  }
-  if (callerAuth.authorization) {
-    headers['authorization'] = callerAuth.authorization;
-  }
+  applyAuthHeaders(headers, callerAuth);
 
   const response = await fetch(url.toString(), { headers });
   const html = await response.text();
 
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const title = titleMatch ? titleMatch[1].trim() : '';
-
-  const headings: string[] = [];
-  const headingRegex = /<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi;
-  let headingMatch;
-  while ((headingMatch = headingRegex.exec(html)) !== null) {
-    headings.push(stripHtml(headingMatch[1]));
-  }
-
-  const links: string[] = [];
-  const linkRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let linkMatch;
-  while ((linkMatch = linkRegex.exec(html)) !== null) {
-    const href = linkMatch[1];
-    const text = stripHtml(linkMatch[2]);
-    if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-      links.push(`${text} → ${href}`);
-    }
-  }
-
-  const content = stripHtml(
-    html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, ''),
-  ).slice(0, 4000);
-
-  return { title, headings, links, content };
+  return {
+    title: extractTitle(html),
+    headings: extractHeadings(html),
+    links: extractLinks(html),
+    content: extractContent(html),
+  };
 }
 
 function stripHtml(html: string): string {

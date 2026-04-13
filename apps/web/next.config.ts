@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
   output: process.env.DEPLOY_TARGET === 'docker' ? 'standalone' : undefined,
+  serverExternalPackages: ['pino', 'pino-pretty'],
 };
 
 export default withNextIntl(nextConfig);

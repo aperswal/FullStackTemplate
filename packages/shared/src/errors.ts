@@ -7,8 +7,11 @@ export class AppError extends Error {
   readonly blame: Blame;
   readonly userMessage: string;
 
-  constructor(message: string, options: { statusCode: number; blame: Blame; userMessage: string }) {
-    super(message);
+  constructor(
+    message: string,
+    options: { statusCode: number; blame: Blame; userMessage: string; cause?: unknown },
+  ) {
+    super(message, options.cause !== undefined ? { cause: options.cause } : undefined);
     this.name = 'AppError';
     this.statusCode = options.statusCode;
     this.blame = options.blame;
@@ -41,13 +44,17 @@ export class ServerError extends AppError {
 }
 
 export class ExternalServiceError extends AppError {
-  constructor(message: string, options?: { statusCode?: number; userMessage?: string }) {
+  constructor(
+    message: string,
+    options?: { statusCode?: number; userMessage?: string; cause?: unknown },
+  ) {
     super(message, {
       statusCode: options?.statusCode ?? 502,
       blame: 'external',
       userMessage:
         options?.userMessage ??
         'A third-party service is currently unavailable. Please try again later.',
+      cause: options?.cause,
     });
     this.name = 'ExternalServiceError';
   }
@@ -55,6 +62,7 @@ export class ExternalServiceError extends AppError {
 
 export interface ErrorResponseBody {
   error: {
+    code: string;
     message: string;
     blame: Blame;
     statusCode: number;

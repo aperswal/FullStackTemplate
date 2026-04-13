@@ -4,8 +4,12 @@ import type { AnalyticsProvider, AnalyticsUser, AnalyticsEventProperties } from 
 import { hasAnalyticsConsent } from './consent';
 
 export function initPostHog(apiKey: string, apiHost: string): void {
-  if (typeof window === 'undefined') return;
-  if (!hasAnalyticsConsent()) return;
+  if (typeof window === 'undefined') {
+    return;
+  }
+  if (!hasAnalyticsConsent()) {
+    return;
+  }
 
   posthog.init(apiKey, {
     api_host: apiHost,
@@ -17,12 +21,16 @@ export function initPostHog(apiKey: string, apiHost: string): void {
 
 export const posthogProvider: AnalyticsProvider = {
   trackEvent(name: string, properties?: AnalyticsEventProperties): void {
-    if (!hasAnalyticsConsent()) return;
+    if (!hasAnalyticsConsent()) {
+      return;
+    }
     posthog.capture(name, properties ?? {});
   },
 
   identifyUser(user: AnalyticsUser): void {
-    if (!hasAnalyticsConsent()) return;
+    if (!hasAnalyticsConsent()) {
+      return;
+    }
     posthog.identify(user.id, {
       email: user.email,
       name: user.name,
@@ -31,17 +39,23 @@ export const posthogProvider: AnalyticsProvider = {
   },
 
   trackPageView(url?: string): void {
-    if (!hasAnalyticsConsent()) return;
-    posthog.capture('$pageview', url ? { $current_url: url } : {});
+    if (!hasAnalyticsConsent()) {
+      return;
+    }
+    posthog.capture('$pageview', url !== undefined && url !== '' ? { $current_url: url } : {});
   },
 
   trackRevenue(amount: number, currency: string, properties?: AnalyticsEventProperties): void {
-    if (!hasAnalyticsConsent()) return;
+    if (!hasAnalyticsConsent()) {
+      return;
+    }
     posthog.capture('purchase', { amount, currency, ...properties });
   },
 
   group(groupId: string, properties?: AnalyticsEventProperties): void {
-    if (!hasAnalyticsConsent()) return;
+    if (!hasAnalyticsConsent()) {
+      return;
+    }
     posthog.group('company', groupId, properties);
   },
 

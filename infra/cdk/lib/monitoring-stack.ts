@@ -2,8 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as cloudtrail from 'aws-cdk-lib/aws-cloudtrail';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as sns_subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import type { Construct } from 'constructs';
 import type { EnvironmentConfig } from '../config';
 
@@ -20,6 +22,7 @@ export class MonitoringStack extends cdk.Stack {
 
     const { config } = props;
 
+    // Application log group
     this.logGroup = new logs.LogGroup(this, 'AppLogGroup', {
       logGroupName: `/${config.appName}/${config.stageName}/app`,
       retention: this.mapRetentionDays(config.logRetentionDays),
@@ -27,6 +30,7 @@ export class MonitoringStack extends cdk.Stack {
         config.stageName === 'production' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
+    // SNS alarm topic
     this.alarmTopic = new sns.Topic(this, 'AlarmTopic', {
       topicName: `${config.appName}-alarms-${config.stageName}`,
       displayName: `${config.appName} ${config.stageName} Alarms`,
@@ -36,14 +40,70 @@ export class MonitoringStack extends cdk.Stack {
       this.alarmTopic.addSubscription(new sns_subscriptions.EmailSubscription(config.alarmEmail));
     }
 
+    // ─── Metric Filters ──────────────────────────────────────
+    const metricNamespace = `${config.appName}/${config.stageName}`;
+
     const errorMetricFilter = new logs.MetricFilter(this, 'ErrorMetricFilter', {
       logGroup: this.logGroup,
       filterPattern: logs.FilterPattern.stringValue('$.level', '=', 'error'),
-      metricNamespace: `${config.appName}/${config.stageName}`,
+      metricNamespace,
       metricName: 'ErrorCount',
       metricValue: '1',
       defaultValue: 0,
     });
+
+    new logs.MetricFilter(this, 'WarnMetricFilter', {
+      logGroup: this.logGroup,
+      filterPattern: logs.FilterPattern.stringValue('$.level', '=', 'warn'),
+      metricNamespace,
+      metricName: 'WarnCount',
+      metricValue: '1',
+      defaultValue: 0,
+    });
+
+    new logs.MetricFilter(this, 'LatencyMetricFilter', {
+      logGroup: this.logGroup,
+      filterPattern: logs.FilterPattern.exists('$.responseTime'),
+      metricNamespace,
+      metricName: 'ResponseTimeMs',
+      metricValue: '$.responseTime',
+      defaultValue: 0,
+    });
+
+    new logs.MetricFilter(this, '4xxMetricFilter', {
+      logGroup: this.logGroup,
+      filterPattern: logs.FilterPattern.all(
+        logs.FilterPattern.numberValue('$.statusCode', '>=', 400),
+        logs.FilterPattern.numberValue('$.statusCode', '<', 500),
+      ),
+      metricNamespace,
+      metricName: 'Http4xxCount',
+      metricValue: '1',
+      defaultValue: 0,
+    });
+
+    new logs.MetricFilter(this, '5xxMetricFilter', {
+      logGroup: this.logGroup,
+      filterPattern: logs.FilterPattern.numberValue('$.statusCode', '>=', 500),
+      metricNamespace,
+      metricName: 'Http5xxCount',
+      metricValue: '1',
+      defaultValue: 0,
+    });
+
+    new logs.MetricFilter(this, 'AuthFailureMetricFilter', {
+      logGroup: this.logGroup,
+      filterPattern: logs.FilterPattern.all(
+        logs.FilterPattern.stringValue('$.context', '=', 'auth'),
+        logs.FilterPattern.stringValue('$.level', '=', 'error'),
+      ),
+      metricNamespace,
+      metricName: 'AuthFailureCount',
+      metricValue: '1',
+      defaultValue: 0,
+    });
+
+    // ─── Alarms ──────────────────────────────────────────────
 
     const errorAlarm = new cloudwatch.Alarm(this, 'ErrorRateAlarm', {
       alarmName: `${config.appName}-${config.stageName}-error-rate`,
@@ -60,7 +120,113 @@ export class MonitoringStack extends cdk.Stack {
 
     errorAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(this.alarmTopic));
 
-    // S3 bucket metrics can be added via CloudWatch custom metrics if needed
+    // ─── CloudTrail ──────────────────────────────────────────
+
+    const trailBucket = new s3.Bucket(this, 'TrailBucket', {
+      bucketName: `${config.appName}-trail-${config.stageName}`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy:
+        config.stageName === 'production' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: config.stageName !== 'production',
+      lifecycleRules: [
+        {
+          id: 'expire-old-trail-logs',
+          expiration: cdk.Duration.days(config.stageName === 'production' ? 365 : 30),
+        },
+      ],
+    });
+
+    new cloudtrail.Trail(this, 'AppTrail', {
+      trailName: `${config.appName}-${config.stageName}`,
+      bucket: trailBucket,
+      isMultiRegionTrail: false,
+      includeGlobalServiceEvents: config.stageName === 'production',
+      sendToCloudWatchLogs: true,
+      cloudWatchLogGroup: new logs.LogGroup(this, 'TrailLogGroup', {
+        logGroupName: `/${config.appName}/${config.stageName}/cloudtrail`,
+        retention: this.mapRetentionDays(config.logRetentionDays),
+        removalPolicy:
+          config.stageName === 'production' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      }),
+    });
+
+    // ─── CloudWatch Dashboard ────────────────────────────────
+
+    const dashboard = new cloudwatch.Dashboard(this, 'AppDashboard', {
+      dashboardName: `${config.appName}-${config.stageName}`,
+    });
+
+    dashboard.addWidgets(
+      new cloudwatch.TextWidget({
+        markdown: `# ${config.appName} — ${config.stageName}\nApplication health dashboard`,
+        width: 24,
+        height: 1,
+      }),
+    );
+
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: 'Error & Warning Rate',
+        left: [
+          new cloudwatch.Metric({
+            namespace: metricNamespace,
+            metricName: 'ErrorCount',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: 'Errors',
+            color: '#d13212',
+          }),
+          new cloudwatch.Metric({
+            namespace: metricNamespace,
+            metricName: 'WarnCount',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: 'Warnings',
+            color: '#ff9900',
+          }),
+        ],
+        width: 8,
+      }),
+      new cloudwatch.GraphWidget({
+        title: 'HTTP Status Codes',
+        left: [
+          new cloudwatch.Metric({
+            namespace: metricNamespace,
+            metricName: 'Http4xxCount',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: '4xx Client Errors',
+            color: '#ff9900',
+          }),
+          new cloudwatch.Metric({
+            namespace: metricNamespace,
+            metricName: 'Http5xxCount',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: '5xx Server Errors',
+            color: '#d13212',
+          }),
+        ],
+        width: 8,
+      }),
+      new cloudwatch.GraphWidget({
+        title: 'Auth Failures',
+        left: [
+          new cloudwatch.Metric({
+            namespace: metricNamespace,
+            metricName: 'AuthFailureCount',
+            statistic: 'Sum',
+            period: cdk.Duration.minutes(5),
+            label: 'Auth Failures',
+            color: '#d13212',
+          }),
+        ],
+        width: 8,
+      }),
+    );
+
+    // ─── Outputs ──────────────────────────────────────────────
 
     new cdk.CfnOutput(this, 'LogGroupName', {
       value: this.logGroup.logGroupName,
@@ -70,6 +236,11 @@ export class MonitoringStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'AlarmTopicArn', {
       value: this.alarmTopic.topicArn,
       description: 'SNS topic ARN for alarms',
+    });
+
+    new cdk.CfnOutput(this, 'DashboardUrl', {
+      value: `https://${cdk.Aws.REGION}.console.aws.amazon.com/cloudwatch/home?region=${cdk.Aws.REGION}#dashboards:name=${config.appName}-${config.stageName}`,
+      description: 'CloudWatch dashboard URL',
     });
   }
 

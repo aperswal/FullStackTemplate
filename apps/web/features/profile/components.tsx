@@ -17,7 +17,7 @@ interface ProfileFormProps {
   };
 }
 
-export function ProfileForm({ defaultValues }: ProfileFormProps) {
+export function ProfileForm({ defaultValues }: ProfileFormProps): React.ReactNode {
   const t = useTranslations('profile');
   const [name, setName] = useState(defaultValues.name);
   const [image, setImage] = useState(defaultValues.image ?? '');
@@ -30,7 +30,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
     setMessage('');
 
     try {
-      const input: UpdateProfileInput = { name, image: image || undefined };
+      const input: UpdateProfileInput = { name, image: image !== '' ? image : undefined };
       await updateProfile(input);
       setMessage(t('profileUpdated'));
       trackEvent('profile_updated');
@@ -42,7 +42,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">{t('nameLabel')}</Label>
         <Input
@@ -65,7 +65,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
         />
       </div>
 
-      {message && <p className="text-sm text-muted-foreground">{message}</p>}
+      {message !== '' && <p className="text-sm text-muted-foreground">{message}</p>}
 
       <Button type="submit" disabled={loading}>
         {loading ? t('saving') : t('saveChanges')}
