@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: ESLint
@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: tsc
@@ -57,7 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
 
@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Validate MCP spec
@@ -124,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Prettier
@@ -245,7 +245,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Typecheck
@@ -322,7 +322,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - uses: actions/setup-go@v5
         with:
@@ -394,7 +394,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Build Next.js for E2E
