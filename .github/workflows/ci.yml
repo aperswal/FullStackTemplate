@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-ts
           path: |
@@ -170,7 +170,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-go
           path: |
@@ -230,7 +230,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-python
           path: |
@@ -407,7 +407,7 @@ jobs:
         run: pnpm --filter e2e exec playwright test --shard=${{ matrix.shard }}
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results-${{ strategy.job-index }}
           path: e2e/test-results/
