@@ -25,7 +25,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -40,7 +40,7 @@ jobs:
     name: Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -55,7 +55,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -105,7 +105,7 @@ jobs:
       BETTER_AUTH_URL: 'http://localhost:3000'
       NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -122,7 +122,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -142,7 +142,7 @@ jobs:
       run:
         working-directory: services/worker
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
@@ -203,7 +203,7 @@ jobs:
       run:
         working-directory: services/python
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -243,7 +243,7 @@ jobs:
     name: CDK
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -320,7 +320,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
@@ -392,7 +392,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
