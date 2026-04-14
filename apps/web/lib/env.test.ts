@@ -15,6 +15,7 @@ describe('env', () => {
 
   it('skips validation when SKIP_ENV_VALIDATION is set', async () => {
     process.env.SKIP_ENV_VALIDATION = 'true';
+    delete process.env.DATABASE_URL;
     const mod = await import('./env');
     expect(mod.env.NODE_ENV).toBe('test');
     expect(mod.env.DATABASE_URL).toBeUndefined();
@@ -22,6 +23,10 @@ describe('env', () => {
 
   it('fails validation when required env vars are missing and skip flag is absent', async () => {
     delete process.env.SKIP_ENV_VALIDATION;
+    delete process.env.DATABASE_URL;
+    delete process.env.BETTER_AUTH_SECRET;
+    delete process.env.BETTER_AUTH_URL;
+    delete process.env.NEXT_PUBLIC_APP_URL;
     await expect(import('./env')).rejects.toThrow();
   });
 
