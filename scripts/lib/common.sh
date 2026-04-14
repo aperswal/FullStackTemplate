@@ -5,7 +5,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STATE_FILE="$PROJECT_ROOT/.setup-state"
 ENV_ACCUMULATOR="$PROJECT_ROOT/.setup-env-vars"
 
-# ─── Colors ────────────────────────────────────────────────────
+# --- Colors ----------------------------------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -21,19 +21,19 @@ error()   { echo -e "${RED}[error]${RESET} $*" >&2; }
 
 step() {
   echo ""
-  echo -e "${BOLD}━━━ $* ━━━${RESET}"
+  echo -e "${BOLD}--- $* ---${RESET}"
 }
 
 banner() {
   echo ""
   echo -e "${BOLD}${GREEN}"
-  echo "  ┌─────────────────────────────────────────┐"
-  echo "  │        Full-Stack Template Setup         │"
-  echo "  └─────────────────────────────────────────┘"
+  echo "  +-----------------------------------------+"
+  echo "  |        Full-Stack Template Setup         |"
+  echo "  +-----------------------------------------+"
   echo -e "${RESET}"
 }
 
-# ─── Prompts ───────────────────────────────────────────────────
+# --- Prompts ---------------------------------------------------
 
 # Ask a yes/no question. Returns 0 for yes, 1 for no.
 # Usage: confirm "Set up Stripe?" "Y"   (default yes)
@@ -80,7 +80,7 @@ prompt_secret() {
   echo "$answer"
 }
 
-# ─── Env Var Accumulator ──────────────────────────────────────
+# --- Env Var Accumulator --------------------------------------
 # Uses a flat key=value file to avoid bash 3.2 associative array limitation on macOS.
 
 env_init() {
@@ -106,11 +106,11 @@ env_get() {
   fi
 }
 
-# ─── State Management (Idempotency) ──────────────────────────
+# --- State Management (Idempotency) --------------------------
 
 state_init() {
   if [ ! -f "$STATE_FILE" ]; then
-    echo "# Setup state — tracks provisioned resources for idempotent re-runs" > "$STATE_FILE"
+    echo "# Setup state - tracks provisioned resources for idempotent re-runs" > "$STATE_FILE"
     chmod 600 "$STATE_FILE"
   fi
 }
@@ -144,7 +144,7 @@ mark_step_done() {
   state_set "step_${step}" "done"
 }
 
-# ─── Helpers ──────────────────────────────────────────────────
+# --- Helpers --------------------------------------------------
 
 require_cmd() {
   if ! command -v "$1" &>/dev/null; then

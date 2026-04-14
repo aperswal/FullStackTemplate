@@ -1,4 +1,4 @@
-/** Payment provider abstraction — normalized interface for any payment processor. */
+/** Payment provider abstraction - normalized interface for any payment processor. */
 
 export interface CheckoutParams {
   userId: string;

@@ -1,4 +1,4 @@
-/** User role definitions — the single source of truth for authorization levels. */
+/** User role definitions - the single source of truth for authorization levels. */
 
 export const USER_ROLES = ['free', 'pro', 'admin'] as const;
 

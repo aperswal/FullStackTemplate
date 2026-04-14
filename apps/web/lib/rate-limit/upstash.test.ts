@@ -10,18 +10,24 @@ vi.mock('@/lib/env', () => ({
 }));
 
 const mockLimit = vi.fn();
+const mockRedisConstructor = vi.fn();
+const mockRatelimitConstructor = vi.fn();
+const mockFixedWindow = vi.fn((_limit: number, _window: string) => 'fixed-window-limiter');
 
 class MockRedis {
-  constructor(_opts: any) {}
+  constructor(opts: any) {
+    mockRedisConstructor(opts);
+  }
 }
 
 class MockRatelimit {
   limit: typeof mockLimit;
-  constructor(_opts: any) {
+  constructor(opts: any) {
+    mockRatelimitConstructor(opts);
     this.limit = mockLimit;
   }
-  static fixedWindow(_limit: number, _window: string) {
-    return 'fixed-window-limiter';
+  static fixedWindow(limit: number, window: string) {
+    return mockFixedWindow(limit, window);
   }
 }
 
@@ -56,6 +62,13 @@ describe('createRateLimiter (Upstash)', () => {
     expect(result.limit).toBe(10);
     expect(result.remaining).toBe(9);
     expect(typeof result.reset).toBe('number');
+    expect(mockRedisConstructor).toHaveBeenCalledWith({
+      url: 'https://fake-redis.upstash.io',
+      token: 'fake-token',
+    });
+    expect(mockFixedWindow).toHaveBeenCalledWith(10, '60 s');
+    expect(mockRatelimitConstructor).toHaveBeenCalled();
+    expect(mockLimit).toHaveBeenCalledWith('test-user');
   });
 
   it('converts reset from ms to seconds', async () => {
@@ -88,7 +101,7 @@ describe('createRateLimiter (Upstash)', () => {
     expect(result.remaining).toBe(0);
   });
 
-  it('caches the Upstash limiter for same config', () => {
+  it('caches the Upstash limiter for same config', async () => {
     mockLimit.mockResolvedValue({
       success: true,
       limit: 5,
@@ -101,5 +114,7 @@ describe('createRateLimiter (Upstash)', () => {
 
     // Both should be the same promise
     expect(limiter1).toBe(limiter2);
+    await limiter1;
+    expect(mockRatelimitConstructor).toHaveBeenCalledTimes(1);
   });
 });

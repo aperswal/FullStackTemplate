@@ -4,7 +4,7 @@ import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import i18nextPlugin from 'eslint-plugin-i18next';
-// jsx-a11y plugin is already registered by next/core-web-vitals — only rules added below
+// jsx-a11y plugin is already registered by next/core-web-vitals - only rules added below
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,6 +12,25 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
+
+// Shared no-restricted-syntax selectors that ban non-ASCII characters in
+// string and template literals. Every `no-restricted-syntax` config block
+// must spread this array so flat-config's "last block wins" override does
+// not silently disable the ASCII rule. The repo-wide enforcement of
+// non-ASCII in comments, identifiers, and non-TS files lives in
+// scripts/check-ascii.sh.
+const NO_NON_ASCII_SELECTORS = [
+  {
+    selector: 'Literal[value=/[^\\x00-\\x7F]/]',
+    message:
+      'Non-ASCII character in string literal. Use ASCII equivalents (em-dash -> -, arrow -> ->, checkmark -> [OK], smart quote -> \' or ").',
+  },
+  {
+    selector: 'TemplateElement[value.raw=/[^\\x00-\\x7F]/]',
+    message:
+      'Non-ASCII character in template literal. Use ASCII equivalents (em-dash -> -, arrow -> ->, checkmark -> [OK], smart quote -> \' or ").',
+  },
+];
 
 export default tseslint.config(
   js.configs.recommended,
@@ -38,7 +57,7 @@ export default tseslint.config(
       },
     },
   },
-  // ─── TypeScript-specific rules ──────────────────────────────────────────
+  // --- TypeScript-specific rules ------------------------------------------
   {
     files: ['**/*.{ts,tsx}'],
     rules: {
@@ -75,7 +94,7 @@ export default tseslint.config(
       'max-params': ['error', { max: 4 }],
       'max-nested-callbacks': ['error', { max: 3 }],
 
-      // Exhaustive branching (Clean Code ch.7 — handle every case)
+      // Exhaustive branching (Clean Code ch.7 - handle every case)
       'default-case': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': [
         'error',
@@ -115,7 +134,7 @@ export default tseslint.config(
       '@typescript-eslint/explicit-module-boundary-types': 'error',
       'consistent-return': 'error',
 
-      // Type safety — ban @ts-ignore, restrict type assertions
+      // Type safety - ban @ts-ignore, restrict type assertions
       '@typescript-eslint/ban-ts-comment': [
         'error',
         {
@@ -138,11 +157,16 @@ export default tseslint.config(
       // No silent error swallowing
       'no-empty': ['error', { allowEmptyCatch: false }],
 
-      // File discipline — keep files focused
+      // File discipline - keep files focused
       'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+
+      // Ban non-ASCII characters in TS/JS string and template literals for
+      // instant editor feedback. The repo-wide enforcement (comments,
+      // identifiers, shell, python, markdown) lives in scripts/check-ascii.sh.
+      'no-restricted-syntax': ['error', ...NO_NON_ASCII_SELECTORS],
     },
   },
-  // ─── Code quality (Pragmatic Programmer, Clean Code) ────────────────────
+  // --- Code quality (Pragmatic Programmer, Clean Code) --------------------
   {
     rules: {
       'prefer-const': 'error',
@@ -190,7 +214,7 @@ export default tseslint.config(
       ],
     },
   },
-  // ─── Provider files: exempt from import restrictions ────────────────────
+  // --- Provider files: exempt from import restrictions --------------------
   {
     files: ['lib/payments/providers/**', 'lib/payments/stripe.ts'],
     rules: { 'no-restricted-imports': 'off' },
@@ -203,7 +227,7 @@ export default tseslint.config(
     files: ['lib/analytics/posthog.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
-  // ─── i18n: all user-facing strings must go through next-intl ────────────
+  // --- i18n: all user-facing strings must go through next-intl ------------
   {
     files: ['app/**/*.tsx', 'components/**/*.tsx', 'features/**/*.tsx'],
     plugins: { i18next: i18nextPlugin },
@@ -256,8 +280,8 @@ export default tseslint.config(
     files: ['app/global-error.tsx', 'app/api/**', 'components/ui/**', 'lib/**'],
     rules: { 'i18next/no-literal-string': 'off' },
   },
-  // ─── Accessibility: enforce alt text, aria, semantic roles ──────────────
-  // jsx-a11y plugin is provided by next/core-web-vitals — promote rules to error
+  // --- Accessibility: enforce alt text, aria, semantic roles --------------
+  // jsx-a11y plugin is provided by next/core-web-vitals - promote rules to error
   {
     files: ['**/*.tsx'],
     ignores: ['**/*.test.tsx', 'app/api/**'],
@@ -276,7 +300,7 @@ export default tseslint.config(
       'jsx-a11y/no-noninteractive-element-interactions': 'error',
     },
   },
-  // ─── Console: block ALL methods — use structured logger ─────────────────
+  // --- Console: block ALL methods - use structured logger -----------------
   {
     files: ['**/*.{ts,tsx}'],
     ignores: [
@@ -291,7 +315,7 @@ export default tseslint.config(
       'no-console': 'error',
     },
   },
-  // ─── Test files: relax rules for test ergonomics ────────────────────────
+  // --- Test files: relax rules for test ergonomics ------------------------
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
@@ -317,7 +341,7 @@ export default tseslint.config(
       'consistent-return': 'off',
     },
   },
-  // ─── Config/script files: relax naming ──────────────────────────────────
+  // --- Config/script files: relax naming ----------------------------------
   {
     files: ['**/*.config.{ts,mjs,js}', 'scripts/**', 'lib/env.ts', 'lib/db/seed.ts'],
     rules: {
@@ -331,7 +355,7 @@ export default tseslint.config(
       'consistent-return': 'off',
     },
   },
-  // ─── Schema files: relax naming (Drizzle columns use snake_case) ───────
+  // --- Schema files: relax naming (Drizzle columns use snake_case) -------
   {
     files: ['lib/db/schema/**'],
     rules: {
@@ -339,7 +363,7 @@ export default tseslint.config(
       'no-magic-numbers': 'off',
     },
   },
-  // ─── Migration files: auto-generated, relax everything ─────────────────
+  // --- Migration files: auto-generated, relax everything -----------------
   {
     files: ['lib/db/migrations/**'],
     rules: {
@@ -350,7 +374,7 @@ export default tseslint.config(
       'max-lines-per-function': 'off',
     },
   },
-  // ─── shadcn/ui components: generated code, relax strict rules ───────────
+  // --- shadcn/ui components: generated code, relax strict rules -----------
   {
     files: ['components/ui/**'],
     rules: {
@@ -365,7 +389,7 @@ export default tseslint.config(
       'jsx-a11y/label-has-associated-control': 'off',
     },
   },
-  // ─── External API interfaces: relax naming (third-party APIs use snake_case) ─
+  // --- External API interfaces: relax naming (third-party APIs use snake_case) -
   {
     files: [
       'app/manifest.ts',
@@ -376,7 +400,7 @@ export default tseslint.config(
     ],
     rules: { '@typescript-eslint/naming-convention': 'off' },
   },
-  // ─── SDK interop files: type assertions needed for SDK boundaries ──────
+  // --- SDK interop files: type assertions needed for SDK boundaries ------
   {
     files: ['app/api/mcp/**', 'lib/mcp/**'],
     rules: {
@@ -384,7 +408,7 @@ export default tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
-  // ─── Ban direct process.env — use validated env module ──────────────────
+  // --- Ban direct process.env - use validated env module ------------------
   {
     files: ['**/*.{ts,tsx}'],
     ignores: [
@@ -401,6 +425,7 @@ export default tseslint.config(
     rules: {
       'no-restricted-syntax': [
         'error',
+        ...NO_NON_ASCII_SELECTORS,
         {
           selector: 'MemberExpression[object.object.name="process"][object.property.name="env"]',
           message:
@@ -409,13 +434,14 @@ export default tseslint.config(
       ],
     },
   },
-  // ─── Ban plain Error() — force typed errors ────────────────────────────
+  // --- Ban plain Error() - force typed errors ----------------------------
   {
     files: ['**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}', 'lib/db/seed.ts', 'scripts/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
+        ...NO_NON_ASCII_SELECTORS,
         {
           selector: "NewExpression[callee.name='Error']",
           message:
@@ -429,13 +455,14 @@ export default tseslint.config(
       ],
     },
   },
-  // ─── API routes must use withApiRoute() wrapper ────────────────────────
+  // --- API routes must use withApiRoute() wrapper ------------------------
   {
     files: ['app/api/**/route.{ts,tsx}'],
     ignores: ['app/api/auth/**', 'app/api/og/**', 'app/api/webhooks/**', 'app/api/mcp/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
+        ...NO_NON_ASCII_SELECTORS,
         {
           selector: 'MemberExpression[object.object.name="process"][object.property.name="env"]',
           message: 'Use `import { env } from "@/lib/env"` instead of process.env.',

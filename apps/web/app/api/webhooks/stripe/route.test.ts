@@ -8,6 +8,10 @@ const {
   mockSelect,
   mockTransaction,
   mockRateLimitCheck,
+  mockRequestLoggerInfo,
+  mockRequestLoggerWarn,
+  mockRequestLoggerError,
+  mockRequestLoggerDebug,
 } = vi.hoisted(() => ({
   mockConstructEvent: vi.fn(),
   mockSubscriptionsRetrieve: vi.fn(),
@@ -18,6 +22,10 @@ const {
   mockRateLimitCheck: vi
     .fn()
     .mockResolvedValue({ success: true, limit: 120, remaining: 119, reset: 0 }),
+  mockRequestLoggerInfo: vi.fn(),
+  mockRequestLoggerWarn: vi.fn(),
+  mockRequestLoggerError: vi.fn(),
+  mockRequestLoggerDebug: vi.fn(),
 }));
 
 vi.mock('@/lib/payments/stripe', () => ({
@@ -38,7 +46,12 @@ vi.mock('@/lib/payments/entitlements', () => ({
 
 vi.mock('@/lib/logger', () => ({
   createRequestLogger: () => ({
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    logger: {
+      info: mockRequestLoggerInfo,
+      warn: mockRequestLoggerWarn,
+      error: mockRequestLoggerError,
+      debug: mockRequestLoggerDebug,
+    },
     correlationId: 'test-id',
   }),
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
@@ -241,7 +254,7 @@ describe('POST /api/webhooks/stripe', () => {
     expect(response.status).toBe(200);
   });
 
-  it('returns 200 even when processing fails (prevents Stripe retries)', async () => {
+  it('returns 500 when processing fails so Stripe retries', async () => {
     makeSub(); // ensure helper works; the sub is constructed inside the route via stripe.subscriptions.retrieve
     const event = makeEvent('checkout.session.completed', {
       metadata: { userId: 'user_1' },
@@ -257,7 +270,9 @@ describe('POST /api/webhooks/stripe', () => {
     });
 
     const response = await POST(createRequest());
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error.code).toBe('WEBHOOK_PROCESSING_FAILED');
   });
 
   it('handles customer.subscription.updated event', async () => {
@@ -267,6 +282,15 @@ describe('POST /api/webhooks/stripe', () => {
 
     const response = await POST(createRequest());
     expect(response.status).toBe(200);
+    expect(vi.mocked(upsertSubscription)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        externalSubscriptionId: 'sub_123',
+        status: 'active',
+      }),
+      expect.anything(),
+    );
+    expect(vi.mocked(syncRoleFromSubscription)).toHaveBeenCalledWith('user_1', expect.anything());
   });
 
   it('handles charge.refunded event', async () => {
@@ -275,6 +299,10 @@ describe('POST /api/webhooks/stripe', () => {
 
     const response = await POST(createRequest());
     expect(response.status).toBe(200);
+    expect(mockRequestLoggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ chargeId: 'ch_123', amountRefunded: 500 }),
+      'Charge refunded - subscription status changes handled by subscription events',
+    );
   });
 
   it('handles invoice.paid event', async () => {
@@ -287,6 +315,15 @@ describe('POST /api/webhooks/stripe', () => {
 
     const response = await POST(createRequest());
     expect(response.status).toBe(200);
+    expect(vi.mocked(upsertSubscription)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        externalSubscriptionId: 'sub_123',
+        status: 'active',
+      }),
+      expect.anything(),
+    );
+    expect(vi.mocked(syncRoleFromSubscription)).toHaveBeenCalledWith('user_1', expect.anything());
   });
 
   it('handles invoice.payment_failed event', async () => {
@@ -299,6 +336,15 @@ describe('POST /api/webhooks/stripe', () => {
 
     const response = await POST(createRequest());
     expect(response.status).toBe(200);
+    expect(vi.mocked(upsertSubscription)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        externalSubscriptionId: 'sub_123',
+        status: 'past_due',
+      }),
+      expect.anything(),
+    );
+    expect(vi.mocked(syncRoleFromSubscription)).toHaveBeenCalledWith('user_1', expect.anything());
   });
 
   it('returns 429 when rate limit is exceeded', async () => {
@@ -313,7 +359,7 @@ describe('POST /api/webhooks/stripe', () => {
     expect(response.status).toBe(429);
   });
 
-  it('still returns 200 when webhook event status update fails', async () => {
+  it('returns 500 even when webhook event status update also fails', async () => {
     const event = makeEvent('checkout.session.completed', {
       metadata: { userId: 'user_1' },
       subscription: 'sub_123',
@@ -329,7 +375,7 @@ describe('POST /api/webhooks/stripe', () => {
     });
 
     const response = await POST(createRequest());
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(500);
   });
 
   it('skips processing when user does not exist', async () => {

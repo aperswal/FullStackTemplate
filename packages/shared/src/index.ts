@@ -1,4 +1,4 @@
-/** @template/shared — single source of truth for types, constants, and interfaces shared across the monorepo. */
+/** @template/shared - single source of truth for types, constants, and interfaces shared across the monorepo. */
 
 export { USER_ROLES, ROLE_HIERARCHY } from './roles';
 export type { UserRole } from './roles';

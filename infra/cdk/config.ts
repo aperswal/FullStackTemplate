@@ -20,6 +20,9 @@ interface EnvironmentConfig {
   memory: number;
   dockerImage?: string;
 
+  // TLS
+  certificateArn?: string;
+
   // CI/CD OIDC
   githubOrg?: string;
   githubRepo?: string;
@@ -43,6 +46,7 @@ const environments: Record<string, EnvironmentConfig> = {
     desiredTaskCount: 1,
     cpu: 256,
     memory: 512,
+    certificateArn: process.env.ACM_CERTIFICATE_ARN,
     githubOrg: process.env.GITHUB_ORG,
     githubRepo: process.env.GITHUB_REPO,
   },
@@ -59,6 +63,7 @@ const environments: Record<string, EnvironmentConfig> = {
     desiredTaskCount: 1,
     cpu: 512,
     memory: 1024,
+    certificateArn: process.env.ACM_CERTIFICATE_ARN,
     githubOrg: process.env.GITHUB_ORG,
     githubRepo: process.env.GITHUB_REPO,
   },
@@ -76,6 +81,7 @@ const environments: Record<string, EnvironmentConfig> = {
     desiredTaskCount: 2,
     cpu: 1024,
     memory: 2048,
+    certificateArn: process.env.ACM_CERTIFICATE_ARN,
     githubOrg: process.env.GITHUB_ORG,
     githubRepo: process.env.GITHUB_REPO,
   },

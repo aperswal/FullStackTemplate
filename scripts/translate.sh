@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─── Auto-translate i18n messages from en.json to all configured target locales ───
+# --- Auto-translate i18n messages from en.json to all configured target locales ---
 #
 # Usage:
 #   ./scripts/translate.sh                   # Translate to all configured locales
@@ -29,14 +29,14 @@ success() { echo -e "${GREEN}[done]${RESET} $*"; }
 warn()    { echo -e "${YELLOW}[warn]${RESET} $*"; }
 error()   { echo -e "${RED}[error]${RESET} $*" >&2; }
 
-# ─── Load .env if present ────────────────────────────────────────
+# --- Load .env if present ----------------------------------------
 if [ -f "$PROJECT_ROOT/.env" ]; then
   set -a
   source "$PROJECT_ROOT/.env"
   set +a
 fi
 
-# ─── Parse arguments ─────────────────────────────────────────────
+# --- Parse arguments ---------------------------------------------
 OVERRIDE=""
 TARGET_OVERRIDE=""
 PROVIDER_OVERRIDE=""
@@ -69,7 +69,7 @@ for arg in "$@"; do
   esac
 done
 
-# ─── Read config ─────────────────────────────────────────────────
+# --- Read config -------------------------------------------------
 if [ ! -f "$CONFIG_FILE" ]; then
   error "Config file not found: $CONFIG_FILE"
   exit 1
@@ -98,7 +98,7 @@ else
   done < <(node -e "require('$CONFIG_FILE').targetLocales.forEach(l => console.log(l))")
 fi
 
-# ─── Resolve API key ────────────────────────────────────────────
+# --- Resolve API key --------------------------------------------
 API_KEY=""
 case "$PROVIDER" in
   google-official)
@@ -135,7 +135,7 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-# ─── Resolve messages directory ──────────────────────────────────
+# --- Resolve messages directory ----------------------------------
 FULL_MESSAGES_DIR="$WEB_DIR/$MESSAGES_DIR"
 SOURCE_FILE="$FULL_MESSAGES_DIR/$SOURCE_LOCALE.json"
 
@@ -144,7 +144,7 @@ if [ ! -f "$SOURCE_FILE" ]; then
   exit 1
 fi
 
-# ─── Translate ───────────────────────────────────────────────────
+# --- Translate ---------------------------------------------------
 echo ""
 echo -e "${BOLD}Translating from ${SOURCE_LOCALE} to ${#TARGET_LOCALES[@]} locale(s)${RESET}"
 echo -e "${BOLD}Provider: ${PROVIDER}${RESET}"
@@ -182,7 +182,7 @@ for locale in "${TARGET_LOCALES[@]}"; do
   echo ""
 done
 
-# ─── Summary ─────────────────────────────────────────────────────
+# --- Summary -----------------------------------------------------
 TOTAL=${#TARGET_LOCALES[@]}
 SUCCEEDED=$((TOTAL - FAILED))
 

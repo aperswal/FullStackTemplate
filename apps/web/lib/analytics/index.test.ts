@@ -12,32 +12,49 @@ import {
 import type { AnalyticsProvider } from './index';
 
 describe('analytics with no provider', () => {
+  let previousProvider: AnalyticsProvider;
+
   beforeEach(() => {
+    previousProvider = {
+      trackEvent: vi.fn(),
+      identifyUser: vi.fn(),
+      trackPageView: vi.fn(),
+      trackRevenue: vi.fn(),
+      group: vi.fn(),
+      reset: vi.fn(),
+    };
+    setAnalyticsProvider(previousProvider);
     setAnalyticsProvider(null as unknown as AnalyticsProvider);
   });
 
-  it('trackEvent does not throw when no provider is set', () => {
-    expect(() => trackEvent('click')).not.toThrow();
+  it('trackEvent is a no-op when no provider is set', () => {
+    trackEvent('click');
+    expect(previousProvider.trackEvent).not.toHaveBeenCalled();
   });
 
-  it('identifyUser does not throw when no provider is set', () => {
-    expect(() => identifyUser({ id: '123' })).not.toThrow();
+  it('identifyUser is a no-op when no provider is set', () => {
+    identifyUser({ id: '123' });
+    expect(previousProvider.identifyUser).not.toHaveBeenCalled();
   });
 
-  it('trackPageView does not throw when no provider is set', () => {
-    expect(() => trackPageView('/home')).not.toThrow();
+  it('trackPageView is a no-op when no provider is set', () => {
+    trackPageView('/home');
+    expect(previousProvider.trackPageView).not.toHaveBeenCalled();
   });
 
-  it('trackRevenue does not throw when no provider is set', () => {
-    expect(() => trackRevenue(29, 'usd')).not.toThrow();
+  it('trackRevenue is a no-op when no provider is set', () => {
+    trackRevenue(29, 'usd');
+    expect(previousProvider.trackRevenue).not.toHaveBeenCalled();
   });
 
-  it('group does not throw when no provider is set', () => {
-    expect(() => group('org-123')).not.toThrow();
+  it('group is a no-op when no provider is set', () => {
+    group('org-123');
+    expect(previousProvider.group).not.toHaveBeenCalled();
   });
 
-  it('resetAnalytics does not throw when no provider is set', () => {
-    expect(() => resetAnalytics()).not.toThrow();
+  it('resetAnalytics is a no-op when no provider is set', () => {
+    resetAnalytics();
+    expect(previousProvider.reset).not.toHaveBeenCalled();
   });
 });
 

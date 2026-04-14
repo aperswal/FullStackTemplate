@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# ─── Resolve paths ─────────────────────────────────────────────
+# --- Resolve paths ---------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 export PROJECT_ROOT
 
-# ─── Source shared utilities ───────────────────────────────────
+# --- Source shared utilities -----------------------------------
 source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/prerequisites.sh"
 source "$SCRIPT_DIR/lib/local.sh"
@@ -18,7 +18,7 @@ source "$SCRIPT_DIR/lib/translate.sh"
 source "$SCRIPT_DIR/lib/write-env.sh"
 source "$SCRIPT_DIR/lib/start-services.sh"
 
-# ─── Parse arguments ──────────────────────────────────────────
+# --- Parse arguments ------------------------------------------
 FORCE=false
 SKIP_SERVICES=false
 SKIP_INSTALL=false
@@ -44,7 +44,7 @@ for arg in "$@"; do
   esac
 done
 
-# ─── Cleanup trap ─────────────────────────────────────────────
+# --- Cleanup trap ---------------------------------------------
 SETUP_COMPLETED=false
 
 cleanup() {
@@ -67,7 +67,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ─── Initialize ───────────────────────────────────────────────
+# --- Initialize -----------------------------------------------
 banner
 
 if [ "$FORCE" = "true" ]; then
@@ -78,7 +78,7 @@ fi
 state_init
 env_init
 
-# ─── Check for existing .setup-state ─────────────────────────
+# --- Check for existing .setup-state -------------------------
 if [ -f "$STATE_FILE" ] && [ "$FORCE" != "true" ]; then
   local_done=0
   for s in prerequisites local stripe aws oauth optional env services; do
@@ -103,7 +103,7 @@ if [ -f "$STATE_FILE" ] && [ "$FORCE" != "true" ]; then
   fi
 fi
 
-# ─── Run setup steps ─────────────────────────────────────────
+# --- Run setup steps -----------------------------------------
 
 if [ "$ENV_ONLY" = "true" ]; then
   # Just write the .env from whatever state exists
@@ -169,14 +169,14 @@ else
   mark_step_done "services"
 fi
 
-# ─── Done ─────────────────────────────────────────────────────
+# --- Done -----------------------------------------------------
 SETUP_COMPLETED=true
 
 echo ""
 echo -e "${BOLD}${GREEN}"
-echo "  ┌─────────────────────────────────────────┐"
-echo "  │            Setup complete!               │"
-echo "  └─────────────────────────────────────────┘"
+echo "  +-----------------------------------------+"
+echo "  |            Setup complete!               |"
+echo "  +-----------------------------------------+"
 echo -e "${RESET}"
 echo "  Next steps:"
 echo ""

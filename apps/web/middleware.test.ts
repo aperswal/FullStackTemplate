@@ -162,13 +162,23 @@ describe('middleware', () => {
     });
 
     it('evicts expired entries when store reaches max size', () => {
+      vi.useFakeTimers();
+
       // Fill the store with unique IPs to reach MAX_RATE_STORE_SIZE (10000)
       for (let i = 0; i < 10_001; i++) {
         middleware(createRequest('/api/auth/sign-in', { ip: `evict-ip-${i}` }));
       }
-      // The store-full branch triggers cleanup. After cleanup, the new request still passes.
-      const response = middleware(createRequest('/api/auth/sign-in', { ip: 'evict-fresh' }));
-      expect(response.status).toBe(200);
+      vi.advanceTimersByTime(61_000);
+
+      const freshIp = 'evict-fresh';
+      for (let i = 0; i < 10; i++) {
+        expect(middleware(createRequest('/api/auth/sign-in', { ip: freshIp })).status).toBe(200);
+      }
+
+      const blocked = middleware(createRequest('/api/auth/sign-in', { ip: freshIp }));
+      expect(blocked.status).toBe(429);
+
+      vi.useRealTimers();
     });
 
     it('tracks different IPs independently', () => {
@@ -183,28 +193,51 @@ describe('middleware', () => {
 
   describe('client IP extraction', () => {
     it('uses x-forwarded-for header', () => {
-      const response = middleware(createRequest('/api/auth/sign-in', { ip: 'ip-fwd-test' }));
-      expect(response.status).toBe(200);
+      const ip = 'ip-fwd-test';
+      for (let i = 0; i < 10; i++) {
+        expect(middleware(createRequest('/api/auth/sign-in', { ip })).status).toBe(200);
+      }
+
+      const blocked = middleware(createRequest('/api/auth/sign-in', { ip }));
+      expect(blocked.status).toBe(429);
     });
 
     it('uses x-real-ip as fallback', () => {
-      const response = middleware(createRequest('/api/auth/sign-in', { realIp: 'ip-real-test' }));
-      expect(response.status).toBe(200);
+      const realIp = 'ip-real-test';
+      for (let i = 0; i < 10; i++) {
+        expect(middleware(createRequest('/api/auth/sign-in', { realIp })).status).toBe(200);
+      }
+
+      const blocked = middleware(createRequest('/api/auth/sign-in', { realIp }));
+      expect(blocked.status).toBe(429);
     });
 
     it('uses "unknown" when no IP headers present', () => {
-      const response = middleware(createRequest('/api/auth/sign-in'));
-      expect(response.status).toBe(200);
+      for (let i = 0; i < 10; i++) {
+        expect(middleware(createRequest('/api/auth/sign-in')).status).toBe(200);
+      }
+
+      const blocked = middleware(createRequest('/api/auth/sign-in'));
+      expect(blocked.status).toBe(429);
     });
 
     it('uses first IP from comma-separated x-forwarded-for', () => {
       const url = 'http://localhost:3000/api/auth/sign-in';
-      const req = new NextRequest(url, {
+      const firstIp = 'first-ip-unique';
+
+      for (let i = 0; i < 10; i++) {
+        const req = new NextRequest(url, {
+          method: 'GET',
+          headers: { 'x-forwarded-for': `${firstIp}, second-ip-${i}` },
+        });
+        expect(middleware(req).status).toBe(200);
+      }
+
+      const blockedReq = new NextRequest(url, {
         method: 'GET',
-        headers: { 'x-forwarded-for': 'first-ip-unique, second-ip' },
+        headers: { 'x-forwarded-for': `${firstIp}, another-ip` },
       });
-      const response = middleware(req);
-      expect(response.status).toBe(200);
+      expect(middleware(blockedReq).status).toBe(429);
     });
   });
 
@@ -229,25 +262,16 @@ describe('middleware', () => {
       vi.unstubAllEnvs();
     });
 
-    it('includes nonce and strict-dynamic in production CSP', () => {
+    it('uses self and unsafe-inline in production CSP without strict-dynamic', () => {
       vi.stubEnv('NODE_ENV', 'production');
 
       const response = middleware(createRequest('/'));
       const csp = response.headers.get('Content-Security-Policy') ?? '';
-      const nonce = response.headers.get('x-nonce');
-      expect(nonce).toBeDefined();
-      expect(nonce!.length).toBeGreaterThan(0);
-      expect(csp).toContain(`'nonce-${nonce}'`);
-      expect(csp).toContain("'strict-dynamic'");
+      expect(csp).toContain("'self'");
+      expect(csp).toContain("'unsafe-inline'");
+      expect(csp).not.toContain('strict-dynamic');
 
       vi.unstubAllEnvs();
-    });
-
-    it('sets x-nonce header on every response', () => {
-      const response = middleware(createRequest('/'));
-      const nonce = response.headers.get('x-nonce');
-      expect(nonce).toBeDefined();
-      expect(nonce!.length).toBeGreaterThan(0);
     });
   });
 

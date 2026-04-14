@@ -33,14 +33,14 @@ describe('buildDeploymentGroup', () => {
   it('wires Compute to use Networking VPC', () => {
     const app = new cdk.App();
     const stacks = buildDeploymentGroup(app, TEST_CONFIG, TEST_ENV);
-    // Cluster is created with the networking VPC — if wiring breaks, cluster won't resolve
-    expect(stacks.compute.cluster).toBeDefined();
+
+    expect(stacks.compute.cluster.vpc).toBe(stacks.networking.vpc);
   });
 
   it('wires IAM taskRole into Compute', () => {
     const app = new cdk.App();
     const stacks = buildDeploymentGroup(app, TEST_CONFIG, TEST_ENV);
-    // The service's task definition uses the IAM role
-    expect(stacks.compute.service).toBeDefined();
+
+    expect(stacks.compute.service.taskDefinition.taskRole).toBe(stacks.iam.taskRole);
   });
 });

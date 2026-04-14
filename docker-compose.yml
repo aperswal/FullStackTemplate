@@ -1,4 +1,4 @@
-# ═══════════════════════════════════════════════════════════════
+# ===============================================================
 # DEVELOPMENT ONLY
 #
 # This file exposes ports for local development (Postgres 5432,
@@ -6,7 +6,7 @@
 #
 # For production, use the override:
 #   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
-# ═══════════════════════════════════════════════════════════════
+# ===============================================================
 
 services:
   web:

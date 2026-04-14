@@ -1,4 +1,4 @@
-# Production overrides — use with:
+# Production overrides - use with:
 #   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 #
 # Changes from development:

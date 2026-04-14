@@ -1,4 +1,4 @@
-/** Plan configuration — the single source of truth for pricing tiers. */
+/** Plan configuration - the single source of truth for pricing tiers. */
 
 import type { UserRole } from './roles';
 

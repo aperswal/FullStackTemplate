@@ -5,7 +5,7 @@ import { buildDeploymentGroup } from '../lib/deployment-group';
 import { TEST_CONFIG, TEST_ENV } from './test-helper';
 
 /**
- * Tests the deployment group builder — the single source of truth for
+ * Tests the deployment group builder - the single source of truth for
  * how all stacks are wired together. If the dependency graph changes,
  * snapshots drift, or a cycle is introduced, these tests catch it.
  */

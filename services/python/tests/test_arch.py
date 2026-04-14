@@ -244,7 +244,7 @@ def test_no_mutable_default_arguments() -> None:
     """Function defaults must not be mutable objects.
 
     Using ``list``, ``dict``, or ``set`` as default arguments is a classic
-    Python gotcha — the default is shared across all calls.
+    Python gotcha - the default is shared across all calls.
     """
     mutable_names = {"list", "dict", "set"}
     violations: list[str] = []

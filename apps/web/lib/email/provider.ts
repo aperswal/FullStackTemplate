@@ -1,4 +1,4 @@
-/** Email provider interface — implement this to add a new email service. */
+/** Email provider interface - implement this to add a new email service. */
 
 export interface EmailOptions {
   to: string;

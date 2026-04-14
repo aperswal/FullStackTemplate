@@ -1,4 +1,4 @@
-"""Coverage ratchet — prevents coverage from decreasing between PRs.
+"""Coverage ratchet - prevents coverage from decreasing between PRs.
 
 Mirrors scripts/coverage-ratchet.ts for the Python service.
 
@@ -66,7 +66,7 @@ def main() -> None:
         return
 
     if not BASELINE_FILE.exists():
-        print("No baseline found — creating initial baseline from current coverage.")
+        print("No baseline found - creating initial baseline from current coverage.")
         BASELINE_FILE.write_text(json.dumps(current, indent=2) + "\n")
         print("Baseline created. Future PRs will be compared against this.")
         return

@@ -12,7 +12,7 @@ run_prerequisites() {
   local missing_required=()
   local missing_optional=()
 
-  # ─── Required tools ──────────────────────────────────────────
+  # --- Required tools ------------------------------------------
   for cmd in pnpm docker openssl jq; do
     if command -v "$cmd" &>/dev/null; then
       success "$cmd found"
@@ -32,7 +32,7 @@ run_prerequisites() {
     fi
   fi
 
-  # ─── Optional tools ─────────────────────────────────────────
+  # --- Optional tools -----------------------------------------
   if ! command -v stripe &>/dev/null; then
     missing_optional+=("stripe")
     warn "stripe CLI not found (needed for Stripe setup)"
@@ -54,7 +54,7 @@ run_prerequisites() {
     success "aws CLI found"
   fi
 
-  # ─── Install missing required tools ─────────────────────────
+  # --- Install missing required tools -------------------------
   if [ ${#missing_required[@]} -gt 0 ]; then
     if ! command -v brew &>/dev/null; then
       error "Homebrew is required to install missing tools: ${missing_required[*]}"
@@ -81,7 +81,7 @@ run_prerequisites() {
     fi
   fi
 
-  # ─── Offer to install optional tools ────────────────────────
+  # --- Offer to install optional tools ------------------------
   if [ ${#missing_optional[@]} -gt 0 ]; then
     echo ""
     info "Missing optional tools: ${missing_optional[*]}"

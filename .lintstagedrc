@@ -1,6 +1,9 @@
 {
   "*.{ts,tsx}": ["eslint --fix --max-warnings=0 --no-warn-ignored", "prettier --write"],
   "*.{json,md,yml,yaml,css}": ["prettier --write"],
+  "*.{ts,tsx,js,jsx,mjs,cjs,md,mdx,json,yml,yaml,py,sh,go,rs,sql,toml,html,css,scss}": [
+    "bash scripts/check-ascii.sh"
+  ],
   "services/worker/**/*.go": [
     "bash -c 'cd services/worker && golangci-lint run --fix ./... && $(go env GOPATH)/bin/gofumpt -w .'"
   ],

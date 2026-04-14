@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Coverage ratchet — prevents coverage from decreasing between PRs.
+# Coverage ratchet - prevents coverage from decreasing between PRs.
 # Mirrors scripts/coverage-ratchet.ts for the Go worker service.
 #
 # Usage:
@@ -32,7 +32,7 @@ if [ "${1:-}" = "--update" ]; then
 fi
 
 if [ ! -f "$BASELINE_FILE" ]; then
-    echo "No baseline found — creating initial baseline from current coverage."
+    echo "No baseline found - creating initial baseline from current coverage."
     printf '{"statements": %s}\n' "$CURRENT" > "$BASELINE_FILE"
     echo "Baseline created at ${CURRENT}%. Future PRs will be compared against this."
     exit 0

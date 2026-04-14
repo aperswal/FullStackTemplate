@@ -16,7 +16,7 @@ export const GET = withApiRoute(
         { status: 200 },
       );
     } catch (error) {
-      log.error({ err: error }, 'Health check failed — database unreachable');
+      log.error({ err: error }, 'Health check failed - database unreachable');
       throw new ServerError('Database health check failed', {
         statusCode: 503,
         userMessage: 'Service is temporarily unavailable.',

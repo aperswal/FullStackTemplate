@@ -19,7 +19,7 @@ run_stripe() {
     return 0
   fi
 
-  # ─── Login ───────────────────────────────────────────────────
+  # --- Login ---------------------------------------------------
   info "Checking Stripe authentication..."
   if ! stripe config --list &>/dev/null; then
     info "Opening Stripe login in your browser..."
@@ -28,7 +28,7 @@ run_stripe() {
     success "Already logged into Stripe"
   fi
 
-  # ─── API Keys ────────────────────────────────────────────────
+  # --- API Keys ------------------------------------------------
   # stripe config --list shows the device name and key info but not raw keys.
   # The most reliable approach is to open the dashboard and prompt.
   info "We need your Stripe test API keys."
@@ -39,7 +39,7 @@ run_stripe() {
   local sk
   sk=$(prompt_secret "Paste your Secret key (sk_test_...)")
   if [[ ! "$sk" =~ ^sk_test_ ]]; then
-    warn "Key doesn't start with sk_test_ — are you sure this is a test key?"
+    warn "Key doesn't start with sk_test_ - are you sure this is a test key?"
     if ! confirm "Continue anyway?" "n"; then
       return 1
     fi
@@ -50,7 +50,7 @@ run_stripe() {
   pk=$(prompt_secret "Paste your Publishable key (pk_test_...)")
   env_set "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$pk"
 
-  # ─── Create Product + Price ─────────────────────────────────
+  # --- Create Product + Price ---------------------------------
   local price_id
   price_id=$(state_get "STRIPE_PRO_PRICE_ID")
 
@@ -105,7 +105,7 @@ run_stripe() {
 
   env_set "STRIPE_PRO_PRICE_ID" "$price_id"
 
-  # ─── Webhook Secret ─────────────────────────────────────────
+  # --- Webhook Secret -----------------------------------------
   info "Getting webhook signing secret..."
   local webhook_secret
   webhook_secret=$(stripe listen --print-secret --api-key="$sk" 2>/dev/null)

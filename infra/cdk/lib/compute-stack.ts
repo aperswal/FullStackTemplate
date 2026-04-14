@@ -4,6 +4,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import type { Construct } from 'constructs';
@@ -51,24 +52,24 @@ export class ComputeStack extends cdk.Stack {
       ],
     });
 
-    // ALB Security Group — accepts HTTP/HTTPS from internet
+    // ALB Security Group - accepts HTTP/HTTPS from internet
     const albSecurityGroup = new ec2.SecurityGroup(this, 'AlbSecurityGroup', {
       vpc,
       securityGroupName: `${config.appName}-alb-sg-${config.stageName}`,
-      description: 'Security group for ALB — accepts public HTTP/HTTPS traffic',
+      description: 'Security group for ALB - accepts public HTTP/HTTPS traffic',
     });
     albSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'HTTP from internet');
     albSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'HTTPS from internet');
 
-    // App Security Group — accepts traffic only from ALB
+    // App Security Group - accepts traffic only from ALB
     const appSecurityGroup = new ec2.SecurityGroup(this, 'AppSecurityGroup', {
       vpc,
       securityGroupName: `${config.appName}-app-sg-${config.stageName}`,
-      description: 'Security group for Fargate tasks — accepts traffic only from ALB',
+      description: 'Security group for Fargate tasks - accepts traffic only from ALB',
     });
     appSecurityGroup.addIngressRule(albSecurityGroup, ec2.Port.tcp(3000), 'HTTP from ALB only');
 
-    // Allow app to connect to database — use L1 construct to keep the resource
+    // Allow app to connect to database - use L1 construct to keep the resource
     // in ComputeStack and avoid a cross-stack dependency cycle
     new ec2.CfnSecurityGroupIngress(this, 'DbIngressFromApp', {
       groupId: dbSecurityGroup.securityGroupId,
@@ -164,23 +165,60 @@ export class ComputeStack extends cdk.Stack {
       assignPublicIp: false,
     });
 
-    // ALB Target Group + Listener
-    const listener = this.alb.addListener('HttpListener', {
-      port: 80,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-    });
+    // ALB Target Group + Listener(s)
+    const targetHealthCheck = {
+      path: '/api/health',
+      interval: cdk.Duration.seconds(30),
+      healthyThresholdCount: 2,
+      unhealthyThresholdCount: 3,
+    };
 
-    listener.addTargets('WebTarget', {
-      port: 3000,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      targets: [this.service],
-      healthCheck: {
-        path: '/api/health',
-        interval: cdk.Duration.seconds(30),
-        healthyThresholdCount: 2,
-        unhealthyThresholdCount: 3,
-      },
-    });
+    if (config.certificateArn) {
+      const certificate = acm.Certificate.fromCertificateArn(
+        this,
+        'Certificate',
+        config.certificateArn,
+      );
+
+      // HTTPS listener with TLS termination
+      const httpsListener = this.alb.addListener('HttpsListener', {
+        port: 443,
+        protocol: elbv2.ApplicationProtocol.HTTPS,
+        certificates: [certificate],
+        sslPolicy: elbv2.SslPolicy.TLS13_RES,
+      });
+
+      httpsListener.addTargets('WebTarget', {
+        port: 3000,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targets: [this.service],
+        healthCheck: targetHealthCheck,
+      });
+
+      // HTTP -> HTTPS redirect
+      this.alb.addListener('HttpRedirect', {
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        defaultAction: elbv2.ListenerAction.redirect({
+          protocol: 'HTTPS',
+          port: '443',
+          permanent: true,
+        }),
+      });
+    } else {
+      // HTTP-only listener for local/dev without a certificate
+      const listener = this.alb.addListener('HttpListener', {
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+      });
+
+      listener.addTargets('WebTarget', {
+        port: 3000,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targets: [this.service],
+        healthCheck: targetHealthCheck,
+      });
+    }
 
     // Auto-scaling
     const scaling = this.service.autoScaleTaskCount({

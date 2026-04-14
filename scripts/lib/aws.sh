@@ -15,7 +15,7 @@ run_aws() {
     return 0
   fi
 
-  # ─── Verify auth ────────────────────────────────────────────
+  # --- Verify auth --------------------------------------------
   info "Checking AWS authentication..."
   local identity
   identity=$(aws sts get-caller-identity 2>/dev/null)
@@ -35,7 +35,7 @@ run_aws() {
   region=$(aws configure get region 2>/dev/null || echo "us-east-1")
   env_set "AWS_REGION" "$region"
 
-  # ─── IAM User ───────────────────────────────────────────────
+  # --- IAM User -----------------------------------------------
   local iam_user="fullstack-template-dev"
   info "Creating IAM user: $iam_user"
 
@@ -53,7 +53,7 @@ run_aws() {
     fi
   fi
 
-  # ─── Access Keys ────────────────────────────────────────────
+  # --- Access Keys --------------------------------------------
   local existing_key_id
   existing_key_id=$(state_get "AWS_ACCESS_KEY_ID")
 
@@ -82,7 +82,7 @@ run_aws() {
     fi
   fi
 
-  # ─── S3 Bucket ──────────────────────────────────────────────
+  # --- S3 Bucket ----------------------------------------------
   local bucket_name="fullstack-template-uploads-dev"
 
   local existing_bucket
@@ -115,7 +115,7 @@ run_aws() {
   env_set "S3_BUCKET_NAME" "$bucket_name"
   state_set "S3_BUCKET_NAME" "$bucket_name"
 
-  # ─── S3 Policy for IAM User ────────────────────────────────
+  # --- S3 Policy for IAM User --------------------------------
   info "Attaching S3 access policy..."
   local policy_doc
   policy_doc=$(cat <<POLICY

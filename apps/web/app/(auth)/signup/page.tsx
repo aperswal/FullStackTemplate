@@ -178,7 +178,9 @@ export default function SignupPage(): React.ReactNode {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">{t('createAccount')}</CardTitle>
+        <CardTitle role="heading" aria-level={1} className="text-2xl">
+          {t('createAccount')}
+        </CardTitle>
         <CardDescription>{t('getStartedFree')}</CardDescription>
       </CardHeader>
       <CardContent>

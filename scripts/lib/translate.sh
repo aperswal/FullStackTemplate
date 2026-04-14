@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Setup Google Cloud Translation API key — automates via gcloud CLI when available.
+# Setup Google Cloud Translation API key - automates via gcloud CLI when available.
 
 run_translate() {
   step "Translation API (i18n auto-translation)"
@@ -22,7 +22,7 @@ run_translate() {
   echo ""
   echo "  1) Google Cloud Translation (free 500K chars/month)"
   echo "  2) DeepL (free tier: 500K chars/month, higher quality)"
-  echo "  3) Skip — I'll set the key manually"
+  echo "  3) Skip - I'll set the key manually"
   echo -en "${BOLD}Choose provider [1/2/3]:${RESET} "
   read -r provider_choice
 
@@ -34,7 +34,7 @@ run_translate() {
       ;;
   esac
 
-  # ─── Configure target languages ──────────────────────────────
+  # --- Configure target languages ------------------------------
   echo ""
   info "Which languages should translations be generated for?"
   info "Enter ISO codes separated by commas (e.g., es,fr,de,ja,zh,ko)"
@@ -67,7 +67,7 @@ run_translate() {
 }
 
 _setup_google_translate() {
-  # ─── Try gcloud CLI automation ────────────────────────────────
+  # --- Try gcloud CLI automation --------------------------------
   if command -v gcloud &>/dev/null; then
     info "Found gcloud CLI. Attempting automated setup..."
 
@@ -135,7 +135,7 @@ _setup_google_translate() {
     echo ""
   fi
 
-  # ─── Manual fallback ──────────────────────────────────────────
+  # --- Manual fallback ------------------------------------------
   info "To get a Google Cloud Translation API key:"
   info "  1. Go to https://console.cloud.google.com/apis/credentials"
   info "  2. Create a new API key"

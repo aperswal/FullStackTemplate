@@ -21,7 +21,7 @@ describe('logger', () => {
 describe('createLogger', () => {
   it('returns a child logger with context', () => {
     const child = createLogger('test-context');
-    expect(child).toBeDefined();
+    expect(child.bindings()).toMatchObject({ context: 'test-context' });
     expect(typeof child.info).toBe('function');
   });
 });
@@ -29,9 +29,9 @@ describe('createLogger', () => {
 describe('createRequestLogger', () => {
   it('returns a logger and correlation ID', () => {
     const result = createRequestLogger();
-    expect(result.logger).toBeDefined();
     expect(typeof result.correlationId).toBe('string');
     expect(result.correlationId.length).toBeGreaterThan(0);
+    expect(result.logger.bindings()).toMatchObject({ correlationId: result.correlationId });
   });
 
   it('uses provided request ID as correlation ID', () => {
@@ -68,13 +68,26 @@ describe('withCorrelation', () => {
     expect(result).toBe(42);
   });
 
-  it('makes correlation ID available to the logger mixin', () => {
+  it('makes correlation ID available to the logger mixin', async () => {
+    const output: string[] = [];
+    const { default: pino } = await import('pino');
+    const testLogger = pino(
+      {
+        mixin() {
+          const ctx = requestContext.getStore();
+          return ctx ? { correlationId: ctx.correlationId } : {};
+        },
+      },
+      { write: (chunk: string) => output.push(chunk) },
+    );
+
     withCorrelation('mixin-test-id', () => {
-      // Calling a log method triggers the mixin, which reads requestContext.getStore()
-      // and takes the truthy branch of the ternary to include the correlationId.
-      logger.info('test message inside correlation context');
-      const store = requestContext.getStore();
-      expect(store).toEqual({ correlationId: 'mixin-test-id' });
+      testLogger.info('test message inside correlation context');
+    });
+
+    expect(JSON.parse(output[0])).toMatchObject({
+      correlationId: 'mixin-test-id',
+      msg: 'test message inside correlation context',
     });
   });
 });

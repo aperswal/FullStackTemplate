@@ -1,6 +1,10 @@
 /**
- * Build-time validation: ensures all API routes and page routes
- * are registered in the MCP spec (lib/mcp/spec.ts).
+ * Build-time validation: ensures every entry in the user-facing MCP spec
+ * (lib/mcp/spec.ts) maps to a real page or API route on disk.
+ *
+ * Note: the spec is intentionally a curated subset of the app. It does not
+ * need to list every route - only the user-facing pages and actions the
+ * MCP server exposes. We only validate the reverse direction here.
  *
  * Run: pnpm --filter @template/web validate:mcp
  */
@@ -33,11 +37,8 @@ function findFiles(dir: string, filename: string): string[] {
 
 function routeFileToPath(filePath: string, base: string): string {
   let rel = relative(base, filePath);
-  // Remove the filename
   rel = rel.replace(/\/route\.tsx?$/, '').replace(/\/page\.tsx$/, '');
-  // Remove route groups like (marketing), (app), (auth)
   rel = rel.replace(/\([\w-]+\)\/?/g, '');
-  // Clean up
   rel = `/${rel.replace(/\/$/, '')}`;
   if (rel === '/') {
     return '/';
@@ -45,55 +46,13 @@ function routeFileToPath(filePath: string, base: string): string {
   return rel;
 }
 
-const errors: string[] = [];
-
-// Check API routes (both .ts and .tsx extensions)
 const apiRoutes = [
   ...findFiles(join(APP_DIR, 'api'), 'route.ts'),
   ...findFiles(join(APP_DIR, 'api'), 'route.tsx'),
 ];
-const specPaths = new Set(spec.endpoints.map((e) => e.path));
-
-for (const routeFile of apiRoutes) {
-  const routePath = routeFileToPath(routeFile, APP_DIR);
-  // BetterAuth catch-all is dynamic, skip it
-  if (routePath.includes('[...all]') || routePath.includes('[')) {
-    continue;
-  }
-
-  if (!specPaths.has(routePath)) {
-    const rel = relative(join(APP_DIR, '..'), routeFile);
-    errors.push(
-      `API route ${routePath} (${rel}) has no entry in lib/mcp/spec.ts\n` +
-        `  → Add an endpoint definition for path '${routePath}'\n` +
-        `  → Template: { path: '${routePath}', method: 'GET', auth: true, description: '...' }`,
-    );
-  }
-}
-
-// Check page routes
-const pageFiles = findFiles(APP_DIR, 'page.tsx');
-const specRoutes = new Set(spec.routes.map((r) => r.path));
-
-for (const pageFile of pageFiles) {
-  const pagePath = routeFileToPath(pageFile, APP_DIR);
-  // Skip API pages (they don't have page.tsx but just in case)
-  if (pagePath.startsWith('/api')) {
-    continue;
-  }
-
-  if (!specRoutes.has(pagePath)) {
-    const rel = relative(join(APP_DIR, '..'), pageFile);
-    errors.push(
-      `Page route ${pagePath} (${rel}) has no entry in lib/mcp/spec.ts routes\n` +
-        `  → Add a route definition for path '${pagePath}'\n` +
-        `  → Template: { path: '${pagePath}', title: '...', description: '...' }`,
-    );
-  }
-}
-
-// Reverse validation: spec entries must point to actual route files
 const apiPathsOnDisk = new Set(apiRoutes.map((f) => routeFileToPath(f, APP_DIR)));
+
+const pageFiles = findFiles(APP_DIR, 'page.tsx');
 const pagePathsOnDisk = new Set(
   pageFiles.map((f) => routeFileToPath(f, APP_DIR)).filter((p) => !p.startsWith('/api')),
 );
@@ -101,48 +60,48 @@ const pagePathsOnDisk = new Set(
 // BetterAuth catch-all handles all /api/auth/* sub-routes
 const catchAllPrefixes = ['/api/auth/'];
 
-for (const endpoint of spec.endpoints) {
-  // Dynamic/catch-all routes won't have exact matches on disk
-  if (endpoint.path.includes('[')) {
+const errors: string[] = [];
+
+for (const action of spec.actions) {
+  if (action.description === '') {
+    errors.push(`Spec action '${action.name}' has an empty description`);
+  }
+  if (catchAllPrefixes.some((prefix) => action.path.startsWith(prefix))) {
     continue;
   }
-  // Routes served by a catch-all handler don't have individual files
-  if (catchAllPrefixes.some((prefix) => endpoint.path.startsWith(prefix))) {
+  if (action.path.includes('[')) {
     continue;
   }
-  if (!apiPathsOnDisk.has(endpoint.path)) {
+  if (!apiPathsOnDisk.has(action.path)) {
     errors.push(
-      `Spec endpoint ${endpoint.path} has no matching route file on disk\n` +
-        `  → Either create app${endpoint.path}/route.ts or remove it from spec.ts`,
+      `Spec action '${action.name}' targets ${action.path}, which has no matching route file on disk\n` +
+        `  -> Either create app${action.path}/route.ts or remove the action from spec.ts`,
     );
-  }
-  if (endpoint.description === '') {
-    errors.push(`Spec endpoint ${endpoint.path} has an empty description`);
   }
 }
 
-for (const route of spec.routes) {
-  if (!pagePathsOnDisk.has(route.path)) {
-    errors.push(
-      `Spec route ${route.path} has no matching page file on disk\n` +
-        `  → Either create the page or remove it from spec.ts`,
-    );
+for (const page of spec.pages) {
+  if (page.description === '') {
+    errors.push(`Spec page ${page.path} has an empty description`);
   }
-  if (route.description === '') {
-    errors.push(`Spec route ${route.path} has an empty description`);
+  if (page.title === '') {
+    errors.push(`Spec page ${page.path} has an empty title`);
+  }
+  if (!pagePathsOnDisk.has(page.path)) {
+    errors.push(
+      `Spec page ${page.path} has no matching page.tsx file on disk\n` +
+        `  -> Either create the page or remove it from spec.ts`,
+    );
   }
 }
 
 if (errors.length > 0) {
-  console.error('\n✗ MCP spec validation failed:\n');
+  console.error('\n[FAIL] MCP spec validation failed:\n');
   for (const err of errors) {
     console.error(`  ${err}\n`);
   }
   console.error(`${errors.length} issue(s) found in lib/mcp/spec.ts`);
-  console.error(
-    'All API routes and pages must be registered in the MCP spec, and all spec entries must correspond to actual routes.',
-  );
   process.exit(1);
 } else {
-  console.log('✓ MCP spec validation passed — all routes registered, all spec entries valid');
+  console.log('[OK] MCP spec validation passed - every spec entry points to a real route');
 }

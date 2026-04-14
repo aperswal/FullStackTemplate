@@ -6,6 +6,7 @@ import { getStripe } from '@/lib/payments/stripe';
 import { createErrorResponse, ClientError, ServerError } from '@/lib/errors';
 import { createRequestLogger, withCorrelation } from '@/lib/logger';
 import { createRateLimiter, RATE_LIMITS } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/client-ip';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
 import { webhookEvent } from '@/lib/db/schema/webhook-events';
@@ -23,7 +24,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 async function applyRateLimit(request: Request): Promise<NextResponse | null> {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = getClientIp(request.headers);
   try {
     const limiter = await createRateLimiter(RATE_LIMITS.webhook);
     const result = await limiter.check(ip);
@@ -64,6 +65,46 @@ async function claimIdempotency(event: Stripe.Event): Promise<boolean> {
     .onConflictDoNothing()
     .returning();
   return claimed.length > 0;
+}
+
+async function shouldProcessEvent(
+  event: Stripe.Event,
+  isClaimed: boolean,
+  log: ReturnType<typeof createRequestLogger>['logger'],
+): Promise<boolean> {
+  if (isClaimed) {
+    return true;
+  }
+
+  const existing = await db
+    .select({ status: webhookEvent.status })
+    .from(webhookEvent)
+    .where(eq(webhookEvent.id, event.id))
+    .limit(1);
+
+  if (existing[0]?.status === 'failed') {
+    log.info({ eventId: event.id }, 'Retrying previously failed webhook event');
+    return true;
+  }
+
+  log.info({ eventId: event.id }, 'Duplicate webhook event, skipping');
+  return false;
+}
+
+async function recordFailure(
+  event: Stripe.Event,
+  err: unknown,
+  log: ReturnType<typeof createRequestLogger>['logger'],
+): Promise<void> {
+  log.error({ err, eventType: event.type, eventId: event.id }, 'Error processing webhook');
+  await db
+    .update(webhookEvent)
+    .set({
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : 'Unknown error',
+    })
+    .where(eq(webhookEvent.id, event.id))
+    .catch((updateErr) => log.error({ updateErr }, 'Failed to update webhook event status'));
 }
 
 async function dispatchEvent(
@@ -126,24 +167,25 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const isClaimed = await claimIdempotency(event);
-    if (!isClaimed) {
-      log.info({ eventId: event.id }, 'Duplicate webhook event, skipping');
+    if (!(await shouldProcessEvent(event, isClaimed, log))) {
       return NextResponse.json({ received: true });
     }
 
     try {
       await dispatchEvent(event, stripe, log);
     } catch (err) {
-      log.error({ err, eventType: event.type, eventId: event.id }, 'Error processing webhook');
-      await db
-        .update(webhookEvent)
-        .set({
-          status: 'failed',
-          errorMessage: err instanceof Error ? err.message : 'Unknown error',
-        })
-        .where(eq(webhookEvent.id, event.id))
-        .catch((updateErr) => log.error({ updateErr }, 'Failed to update webhook event status'));
-      return NextResponse.json({ received: true });
+      await recordFailure(event, err, log);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'WEBHOOK_PROCESSING_FAILED',
+            message: 'Event processing failed',
+            blame: 'server' as const,
+            statusCode: 500,
+          },
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ received: true });

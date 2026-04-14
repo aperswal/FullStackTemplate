@@ -3,6 +3,7 @@ import { ServerError } from '@/lib/errors';
 
 const MS_PER_SECOND = 1000;
 const CLEANUP_INTERVAL_MS = 60_000;
+export const MAX_STORE_SIZE = 10_000;
 
 export interface RateLimitConfig {
   /** Max requests per window */
@@ -58,6 +59,21 @@ function createInMemoryRateLimiter(config: RateLimitConfig): RateLimiter {
       const entry = store.get(identifier);
 
       if (!entry || entry.resetAt <= now) {
+        if (store.size >= MAX_STORE_SIZE) {
+          for (const [key, val] of store) {
+            if (val.resetAt <= now) {
+              store.delete(key);
+            }
+          }
+          if (store.size >= MAX_STORE_SIZE) {
+            return {
+              success: true,
+              limit: config.limit,
+              remaining: config.limit - 1,
+              reset: now + config.window,
+            };
+          }
+        }
         const resetAt = now + config.window;
         store.set(identifier, { count: 1, resetAt });
         return { success: true, limit: config.limit, remaining: config.limit - 1, reset: resetAt };

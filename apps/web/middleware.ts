@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import type { ErrorResponseBody } from '@template/shared';
 import { AUTH_SESSION_COOKIE } from '@/lib/auth/constants';
+import { getClientIp } from '@/lib/client-ip';
 import { ROUTES } from '@/lib/routes';
 
 const protectedPaths = [ROUTES.dashboard, ROUTES.settings];
@@ -61,20 +62,12 @@ if (typeof globalThis !== 'undefined') {
   }
 }
 
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown'
-  );
-}
-
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   // Rate limit auth API endpoints
   if (pathname.startsWith('/api/auth')) {
-    const ip = getClientIp(request);
+    const ip = getClientIp(request.headers);
     const { allowed, retryAfter } = checkAuthRateLimit(ip);
     if (!allowed) {
       const body: ErrorResponseBody = {
@@ -121,12 +114,14 @@ export function middleware(request: NextRequest): NextResponse {
 
 function setSecurityHeaders(response: NextResponse): void {
   const isDev = process.env.NODE_ENV !== 'production';
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-  const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`;
 
-  response.headers.set('x-nonce', nonce);
+  // Next.js App Router delivers page content via inline RSC payload scripts.
+  // Nonce-based CSP with strict-dynamic blocks these scripts because Next.js
+  // does not add nonce attributes to its generated script tags. Using 'self'
+  // with 'unsafe-inline' allows the framework scripts while still blocking
+  // cross-origin script injection. 'unsafe-eval' is only enabled in dev.
+  const scriptSrc = isDev ? "'self' 'unsafe-inline' 'unsafe-eval'" : "'self' 'unsafe-inline'";
+
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

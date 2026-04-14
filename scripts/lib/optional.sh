@@ -12,7 +12,7 @@ run_optional() {
   info "These are all optional. Press Enter to skip any you don't need yet."
   echo ""
 
-  # ─── Resend (email for SaaS/Vercel mode) ────────────────────
+  # --- Resend (email for SaaS/Vercel mode) --------------------
   if confirm "Set up Resend (email API for Vercel deploy)?" "n"; then
     open_url "https://resend.com/api-keys"
     local resend_key
@@ -20,7 +20,7 @@ run_optional() {
     [ -n "$resend_key" ] && env_set "RESEND_API_KEY" "$resend_key"
   fi
 
-  # ─── PostHog (analytics) ────────────────────────────────────
+  # --- PostHog (analytics) ------------------------------------
   echo ""
   if confirm "Set up PostHog analytics?" "n"; then
     open_url "https://us.posthog.com/settings/project"
@@ -29,7 +29,7 @@ run_optional() {
     [ -n "$posthog_key" ] && env_set "NEXT_PUBLIC_POSTHOG_KEY" "$posthog_key"
   fi
 
-  # ─── OpenAI ─────────────────────────────────────────────────
+  # --- OpenAI -------------------------------------------------
   echo ""
   if confirm "Set up OpenAI API?" "n"; then
     open_url "https://platform.openai.com/api-keys"
@@ -38,7 +38,7 @@ run_optional() {
     [ -n "$openai_key" ] && env_set "OPENAI_API_KEY" "$openai_key"
   fi
 
-  # ─── Anthropic ──────────────────────────────────────────────
+  # --- Anthropic ----------------------------------------------
   echo ""
   if confirm "Set up Anthropic API?" "n"; then
     open_url "https://console.anthropic.com/settings/keys"
@@ -47,7 +47,7 @@ run_optional() {
     [ -n "$anthropic_key" ] && env_set "ANTHROPIC_API_KEY" "$anthropic_key"
   fi
 
-  # ─── Cloudflare ─────────────────────────────────────────────
+  # --- Cloudflare ---------------------------------------------
   echo ""
   if confirm "Set up Cloudflare?" "n"; then
     # Try wrangler for zone ID
@@ -68,7 +68,7 @@ run_optional() {
     [ -n "$cf_token" ] && env_set "CLOUDFLARE_API_TOKEN" "$cf_token"
   fi
 
-  # ─── Google Site Verification ───────────────────────────────
+  # --- Google Site Verification -------------------------------
   echo ""
   if confirm "Set up Google Site Verification?" "n"; then
     open_url "https://search.google.com/search-console"

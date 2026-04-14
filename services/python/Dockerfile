@@ -1,11 +1,24 @@
+FROM python:3.12-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-dev --extra data --extra ai --no-install-project
+
+COPY . .
+
+RUN uv sync --frozen --no-dev --extra data --extra ai
+
 FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY pyproject.toml ./
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app .
 
-RUN pip install --no-cache-dir ".[data,ai]"
-
-COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
 
 CMD ["python", "-m", "scripts.health"]

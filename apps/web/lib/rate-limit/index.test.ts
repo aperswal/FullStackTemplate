@@ -8,7 +8,7 @@ vi.mock('@/lib/env', () => ({
   },
 }));
 
-import { createRateLimiter, RATE_LIMITS } from './index';
+import { createRateLimiter, RATE_LIMITS, MAX_STORE_SIZE } from './index';
 
 describe('RATE_LIMITS', () => {
   it('defines auth tier with 10 req/min', () => {
@@ -113,7 +113,7 @@ describe('createRateLimiter (in-memory)', () => {
     // Advance past the 60s cleanup interval to trigger cleanup
     vi.advanceTimersByTime(60_000);
 
-    // After cleanup, the entry should be gone — next check should start fresh
+    // After cleanup, the entry should be gone - next check should start fresh
     const result = await limiter.check('cleanup-test-user');
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(9);
@@ -127,6 +127,40 @@ describe('createRateLimiter (in-memory)', () => {
     await limiter.check('over-limit');
     const result = await limiter.check('over-limit');
     expect(result.remaining).toBe(0);
+  });
+
+  it('evicts expired entries when store reaches MAX_STORE_SIZE', async () => {
+    vi.useFakeTimers();
+
+    const limiter = await createRateLimiter({ limit: 1, window: 1 });
+
+    // Fill the store to MAX_STORE_SIZE with expired entries
+    for (let i = 0; i < MAX_STORE_SIZE; i++) {
+      await limiter.check(`evict-${i}`);
+    }
+
+    // Advance past the 1-second window so all entries expire
+    vi.advanceTimersByTime(2000);
+
+    // Next new identifier triggers eviction of expired entries
+    const result = await limiter.check('new-after-eviction');
+    expect(result.success).toBe(true);
+    expect(result.remaining).toBe(0);
+
+    vi.useRealTimers();
+  });
+
+  it('fails open when store is full and no entries are expired', async () => {
+    const limiter = await createRateLimiter({ limit: 1, window: 60 });
+
+    // Fill the store to MAX_STORE_SIZE with non-expired entries
+    for (let i = 0; i < MAX_STORE_SIZE; i++) {
+      await limiter.check(`full-${i}`);
+    }
+
+    // Next new identifier should still succeed (fail-open)
+    const result = await limiter.check('overflow-user');
+    expect(result.success).toBe(true);
   });
 });
 

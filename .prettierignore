@@ -5,3 +5,6 @@ dist
 coverage
 pnpm-lock.yaml
 *.tsbuildinfo
+
+# Local agent/editor state - gitignored, not part of source
+.claude/

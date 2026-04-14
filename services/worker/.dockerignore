@@ -1,0 +1,6 @@
+*_test.go
+coverage.out
+.env*
+.git
+*.md
+scripts

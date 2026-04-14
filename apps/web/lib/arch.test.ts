@@ -245,56 +245,19 @@ describe('Architectural enforcement', () => {
     });
   });
 
-  describe('All API routes registered in MCP spec', () => {
-    it('every API route directory has a corresponding endpoint in the MCP spec', async () => {
-      const { spec } = await import('@/lib/mcp/spec');
-      const specPaths = spec.endpoints.map((endpoint) => endpoint.path);
-
-      const routeFiles = findFiles(path.join(PROJECT_ROOT, 'app', 'api'), /^route\.(ts|tsx)$/);
-
-      const routePaths = routeFiles.map((file) => {
-        const relative = path.relative(path.join(PROJECT_ROOT, 'app'), file);
-        return `/${path
-          .dirname(relative)
-          .replace(/\[\.\.\.all\]/g, '')
-          .replace(/\[([^\]]+)\]/g, ':$1')
-          .replace(/\/+$/, '')}`;
-      });
-
-      const missingFromSpec: string[] = [];
-
-      for (const routePath of routePaths) {
-        const isRegistered = specPaths.some(
-          (specPath) => specPath === routePath || specPath.startsWith(`${routePath}/`),
-        );
-
-        if (!isRegistered) {
-          missingFromSpec.push(routePath);
-        }
-      }
-
-      expect(
-        missingFromSpec,
-        `The following API routes are not registered in lib/mcp/spec.ts. ` +
-          `Add an endpoint entry for each:\n${missingFromSpec.join('\n')}`,
-      ).toHaveLength(0);
-    });
-
-    it('MCP spec does not reference non-existent API endpoints', async () => {
+  describe('MCP spec entries reference real routes on disk', () => {
+    it('every spec action references a real API route (or catch-all-served path)', async () => {
       const { spec } = await import('@/lib/mcp/spec');
 
-      const apiEndpoints = spec.endpoints.filter((endpoint) => endpoint.path.startsWith('/api/'));
-
       const routeFiles = findFiles(path.join(PROJECT_ROOT, 'app', 'api'), /^route\.(ts|tsx)$/);
-
       const routeDirs = routeFiles.map((file) =>
         path.dirname(path.relative(path.join(PROJECT_ROOT, 'app'), file)),
       );
 
-      const staleEndpoints: string[] = [];
+      const staleActions: string[] = [];
 
-      for (const endpoint of apiEndpoints) {
-        const expectedDir = endpoint.path.replace(/^\//, '');
+      for (const action of spec.actions) {
+        const expectedDir = action.path.replace(/^\//, '');
 
         const hasMatchingRoute = routeDirs.some((routeDir) => {
           const normalizedRouteDir = routeDir.replace(/\[\.\.\.all\]/g, '');
@@ -306,14 +269,43 @@ describe('Architectural enforcement', () => {
         });
 
         if (!hasMatchingRoute) {
-          staleEndpoints.push(`${endpoint.method} ${endpoint.path}`);
+          staleActions.push(`${action.name}: ${action.method} ${action.path}`);
         }
       }
 
       expect(
-        staleEndpoints,
-        `The following MCP spec endpoints reference routes that do not exist on disk. ` +
-          `Remove stale entries from lib/mcp/spec.ts:\n${staleEndpoints.join('\n')}`,
+        staleActions,
+        `The following MCP spec actions reference routes that do not exist on disk. ` +
+          `Remove stale entries from lib/mcp/spec.ts:\n${staleActions.join('\n')}`,
+      ).toHaveLength(0);
+    });
+
+    it('every spec page references a real page.tsx file', async () => {
+      const { spec } = await import('@/lib/mcp/spec');
+
+      const pageFiles = findFiles(PROJECT_ROOT, /^page\.tsx$/);
+      const pagePaths = new Set(
+        pageFiles
+          .map((file) => {
+            const rel = path.relative(PROJECT_ROOT, file);
+            const withoutFile = rel.replace(/\/page\.tsx$/, '').replace(/^app\/?/, '');
+            const cleaned = withoutFile.replace(/\([\w-]+\)\/?/g, '').replace(/\/+$/, '');
+            return cleaned === '' ? '/' : `/${cleaned}`;
+          })
+          .filter((p) => !p.startsWith('/api')),
+      );
+
+      const stalePages: string[] = [];
+      for (const page of spec.pages) {
+        if (!pagePaths.has(page.path)) {
+          stalePages.push(page.path);
+        }
+      }
+
+      expect(
+        stalePages,
+        `The following MCP spec pages have no matching page.tsx file on disk. ` +
+          `Remove stale entries from lib/mcp/spec.ts:\n${stalePages.join('\n')}`,
       ).toHaveLength(0);
     });
   });
@@ -356,7 +348,7 @@ describe('Architectural enforcement', () => {
             continue;
           }
 
-          // Skip Drizzle sql tagged templates — they are parameterized
+          // Skip Drizzle sql tagged templates - they are parameterized
           if (/\bsql\s*`/.test(line)) {
             continue;
           }

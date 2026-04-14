@@ -23,7 +23,7 @@ export class DatabaseStack extends cdk.Stack {
     this.dbSecurityGroup = new ec2.SecurityGroup(this, 'DbSecurityGroup', {
       vpc,
       securityGroupName: `${config.appName}-db-sg-${config.stageName}`,
-      description: 'Security group for RDS PostgreSQL — only accepts traffic from app services',
+      description: 'Security group for RDS PostgreSQL - only accepts traffic from app services',
       allowAllOutbound: false,
     });
 

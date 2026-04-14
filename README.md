@@ -2,7 +2,7 @@
 
 ## Philosophy
 
-Build the boring stuff once, then reuse it everywhere. This template wires together authentication, payments, email, database, analytics, and deployment so every new project starts with a working stack instead of a blank canvas. It follows a tracer-bullet approach: each feature is a thin working path through the entire stack (UI, server, database, integrations) before any single layer gets expanded. No premature abstractions — duplication is tolerated until a second concrete case reveals the right boundary.
+Build the boring stuff once, then reuse it everywhere. This template wires together authentication, payments, email, database, analytics, and deployment so every new project starts with a working stack instead of a blank canvas. It follows a tracer-bullet approach: each feature is a thin working path through the entire stack (UI, server, database, integrations) before any single layer gets expanded. No premature abstractions - duplication is tolerated until a second concrete case reveals the right boundary.
 
 ## Standards
 
@@ -59,7 +59,7 @@ brew install node
 # pnpm (package manager)
 brew install pnpm
 
-# Docker Desktop — https://docs.docker.com/desktop/install/mac-install/
+# Docker Desktop - https://docs.docker.com/desktop/install/mac-install/
 brew install --cask docker
 
 # Go (worker service)
@@ -71,7 +71,7 @@ brew install golangci-lint
 # Python 3.12+ (data/AI service)
 brew install python@3.12
 
-# uv (Python package manager) — https://docs.astral.sh/uv/
+# uv (Python package manager) - https://docs.astral.sh/uv/
 brew install uv
 
 # Install Python dev dependencies
@@ -114,7 +114,7 @@ docker compose up -d db mailpit  # just database + email (for local dev with pnp
 ./scripts/setup.sh
 ```
 
-The interactive wizard walks through every service — prerequisites, database, Stripe, OAuth, email, analytics, translation, and more. It is resumable: re-running picks up where you left off.
+The interactive wizard walks through every service - prerequisites, database, Stripe, OAuth, email, analytics, translation, and more. It is resumable: re-running picks up where you left off.
 
 ### Manual
 
@@ -130,11 +130,14 @@ Open http://localhost:3000 in your browser.
 
 ## MCP Configuration
 
-The template includes an MCP server at `/api/mcp` for AI agent integration.
+The template exposes a user-facing MCP server at `/api/mcp` so any AI agent can discover and use the site. Two tools follow the Cloudflare Code Mode pattern:
 
-**Tools**: `search` (query API spec), `execute` (make HTTP requests), `browse` (fetch and parse pages)
-**Resources**: API spec, auth model, subscription tiers, error codes
-**Prompts**: Guided workflows for debugging webhooks and investigating users
+- **`search`** - query the site spec (pages + actions) by writing a JavaScript arrow function
+- **`execute`** - run JavaScript with `browse(path)` and `request({ method, path, body? })` helpers to read pages and call APIs
+
+No API key is required to connect. When a `better-auth.session_token` cookie is forwarded, authenticated actions become available; the app's own access control enforces permissions (401/403 on protected routes). Unauthenticated callers get 10 req/min; authenticated callers get 30 req/min.
+
+Discovery endpoint: `GET /.well-known/mcp.json`.
 
 Configuration in `.mcp.json`:
 
@@ -148,5 +151,3 @@ Configuration in `.mcp.json`:
   }
 }
 ```
-
-In production, set `MCP_API_KEY` (min 32 characters) and update the URL. The endpoint uses bearer token auth with timing-safe comparison.

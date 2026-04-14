@@ -1,4 +1,4 @@
-"""Health check script — verifies the Python environment is functional."""
+"""Health check script - verifies the Python environment is functional."""
 
 import logging
 import sys
